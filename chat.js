@@ -1,41 +1,51 @@
 (function() {
   'use strict';
-  
-  const scriptUrl = document.currentScript?.src || 'https://example.com/chat.js?tenantId=dedeler';
-  function tenantId() {
-    return new URL(scriptUrl).get('tenantId');
-  }
-  
-  function uuidv4() {
-  return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
-    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-  );
-	}
-  
-  const authKey = uuidv4();
-  //Example
-  const iframeUrl = `http://localhost:3000/&url=${scriptUrl}&auth=${authKey}`
 
-  
-  function template() {
-  let startButtonHeight;
-  let startButtonWidth;
-  let startButtonIconSize;
-  let frameHeight;
-  let frameWidth;
-  if(window.matchMedia("(max-width: 500px)").matches) {
-  	startButtonHeight = 50;
-    startButtonWidth = 50;
-    startButtonIconSize = 2
-    frameWidth = 350;
-    frameHeight = 600;
-  } else {
-  	startButtonHeight = 80;
-    startButtonWidth = 80;
-    startButtonIconSize = 3;
-      frameWidth = 400;
-    frameHeight = 650;
+  const LOCAL_STORAGE_KEY_CHAT_ID = "grispi.chat.chatId";
+
+  const EVENTS = {
+    READY: 'grispi.chat.request.ready',
+    INIT: 'grispi.chat.response.init',
+    NEW_CHAT_SESSION: 'grispi.chat.request.newChatSession'
   }
+
+  // const GRISPI_API_URL = 'https://api.grispi.com';
+  // const CHAT_API_URL = 'https://chat.grispi.com';
+  // const CHAT_POPUP_URL = 'https://chat.grispi.com/ui';
+
+  const GRISPI_API_URL = 'http://localhost:8080';
+  const CHAT_API_URL = 'http://localhost:8090';
+  const CHAT_POPUP_URL = 'http://localhost:3000';
+
+  /**
+   * The customer's own site url (3rd party website). The one that the end user browses.
+   * @type {string}
+   */
+  const HOST_URL = location.href;
+
+  const scriptUrl = document.currentScript?.src;
+  const authKey = uuidv4();
+  const iframeUrl = `${CHAT_POPUP_URL}?url=${HOST_URL}&auth=${authKey}`
+
+  function template() {
+    let startButtonHeight;
+    let startButtonWidth;
+    let startButtonIconSize;
+    let frameHeight;
+    let frameWidth;
+    if (window.matchMedia("(max-width: 500px)").matches) {
+      startButtonHeight = 50;
+      startButtonWidth = 50;
+      startButtonIconSize = 2
+      frameWidth = 350;
+      frameHeight = 600;
+    } else {
+      startButtonHeight = 80;
+      startButtonWidth = 80;
+      startButtonIconSize = 3;
+      frameWidth = 400;
+      frameHeight = 650;
+    }
     const containerStyle = `
     position: fixed;
     bottom: 10px;
@@ -55,12 +65,12 @@
     flex-grow: 0;
     align-content: center;justify-content: center;align-items: stretch;
   `;
-		
+
     const grispiChatSymbol = `
     font-size: ${startButtonIconSize}rem;
     color:#f8f9f9;
     `
-    
+
     const headerTextStyle = `
     font-family: 'Montserrat', sans-serif;
     color:#f8f9f9;
@@ -68,10 +78,9 @@
     display: flex;
     align-items: center;
     padding-left: 10px;
-    
   `;
-  
-  const grispiCloseButtonStyle = `
+
+    const grispiCloseButtonStyle = `
   	cursor: pointer;
         border: 0px solid #3498db;
         background-color: transparent;
@@ -83,8 +92,8 @@
     const iframeStyle = `
     flex-grow: 2;
   `;
- 
-  	const grispiChatStartContainerStyle = `
+
+    const grispiChatStartContainerStyle = `
   	position: fixed;
     bottom: 20px;
     right: 20px;
@@ -97,25 +106,22 @@
     align-items: center;
     height: ${startButtonHeight}px;
     width: ${startButtonWidth}px;
-    
-  `
-  
-
-    return `
-<section id="grispiChatContainer" style="${containerStyle}">
-	<div id="grispiPopupHeader" style="${headerStyle}">
-  	<span style="${headerTextStyle}">Chat title</span>
-  	<button id="grispiCloseButton" style="${grispiCloseButtonStyle}"><span class="material-symbols-outlined">
-close
-</span></button>
-  </div>
-  <iframe id="grispiIframe" src="${iframeUrl}" style="${iframeStyle}" referrerpolicy="origin"></iframe>
-</section>
-
-<section id="grispiChatStartContainer" style="${grispiChatStartContainerStyle}">
-	<span class="material-symbols-outlined" style='${grispiChatSymbol}'>chat</span>
-</section>
   `;
+    return `
+      <section id="grispiChatContainer" style="${containerStyle}">
+        <div id="grispiPopupHeader" style="${headerStyle}">
+          <span style="${headerTextStyle}">Chat title</span>
+          <button id="grispiCloseButton" style="${grispiCloseButtonStyle}"><span class="material-symbols-outlined">
+      close
+      </span></button>
+        </div>
+        <iframe id="grispiIframe" src="${iframeUrl}" style="${iframeStyle}" referrerpolicy="origin"></iframe>
+      </section>
+      
+      <section id="grispiChatStartContainer" style="${grispiChatStartContainerStyle}">
+        <span class="material-symbols-outlined" style='${grispiChatSymbol}'>chat</span>
+      </section>
+    `;
   }
 
   document.body.insertAdjacentHTML('beforeend', template());
@@ -125,46 +131,55 @@ close
   const startBtn = document.getElementById('grispiChatStartContainer');
   closeBtn.onclick = () => {popup.style.display = 'none'; startBtn.style.display = 'flex'};
   startBtn.onclick = () => {popup.style.display = 'flex'; startBtn.style.display = 'none'};
-  
-  
-  
-  //TODO request chat preferences and keep the result in a preferences promise
-  const preferences = fetch("https://api.grispi.com/chat/preferences", {
+
+  const preferences = fetch(`${GRISPI_API_URL}/chat/preferences}`, {
     method:"GET",
     mode:"cors",
     headers: {
       "tenantId": tenantId(),
-    	"Referer": scriptUrl
+    	"Referer": HOST_URL //FIXME make browser send this
     }
-  })
+  });
 
-  //TODO listen for ready message then send init message when preferences promise is fullfilled
+  // listen for ready message then send init message when preferences promise is fullfilled
   document.addEventListener("message", (event) => {
     const message = JSON.parse(event.data);
-  	const {auth , data , type }  = message;
-  	console.debug("event came",type ,auth)
+    const {auth, data, type} = message;
+    console.debug("event came", type, auth)
     if (auth !== authKey) {
       console.debug("Not authenticated")
+      return;
     }
-    if(type === "grispi.chat.request.ready") {
-     preferences.then((response) => {
-     		const parsedPreferences = response.json()
-     		const readyMessage = JSON.stringify({
-				//I don't know where auth key comes from
-        auth: authKey,
-        chatId: window.localStorage.getItem("grispi.chat.chatId") ?? undefined,
-				type: "grispi.chat.response.init",
-        data:{
-        	tenantId: tenantId(),
-          text: parsedPreferences.text,
-        }  
-        })
-     		event.source.postMessage(readyMessage , event.origin);
-     })
-    } else if (type === "grispi.chat.request.newChatSession") {
-      window.localStorage.setItem("grispi.chat.chatId", data.chatId)
+    if (type === EVENTS.READY) {
+      preferences // TODO error handling
+        .then(response => response.json())
+        .then((parsedPreferences) => {
+        const readyMessage = JSON.stringify({
+          type: EVENTS.INIT,
+          auth: authKey,
+          data: {
+            tenantId: tenantId(),
+            chatId: window.localStorage.getItem(LOCAL_STORAGE_KEY_CHAT_ID) ?? undefined,
+            text: parsedPreferences.text,
+          }
+        });
+        event.source.postMessage(readyMessage, event.origin);
+      })
+    } else if (type === EVENTS.NEW_CHAT_SESSION) {
+      window.localStorage.setItem(LOCAL_STORAGE_KEY_CHAT_ID, data.chatId)
     }
-  })
+  });
+
+  // Private functions
+  function tenantId() {
+    return new URL(scriptUrl).searchParams.get('tenantId');
+  }
+
+  function uuidv4() {
+    return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+      (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+    );
+  }
 
 })();
 
