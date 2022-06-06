@@ -7,7 +7,7 @@
     READY: 'grispi.chat.request.ready',
     INIT: 'grispi.chat.response.init',
     NEW_CHAT_SESSION: 'grispi.chat.request.newChatSession'
-  }
+  };
 
   // const GRISPI_API_URL = 'https://api.grispi.com';
   // const CHAT_API_URL = 'https://chat.grispi.com';
@@ -125,14 +125,14 @@
   }
 
   document.body.insertAdjacentHTML('beforeend', template());
-  const frameElem = document.getElementById("grispiIframe");
+  const iframe = document.getElementById("grispiIframe");
   const popup = document.getElementById('grispiChatContainer');
   const closeBtn = document.getElementById('grispiCloseButton');
   const startBtn = document.getElementById('grispiChatStartContainer');
   closeBtn.onclick = () => {popup.style.display = 'none'; startBtn.style.display = 'flex'};
   startBtn.onclick = () => {popup.style.display = 'flex'; startBtn.style.display = 'none'};
 
-  const preferences = fetch(`${GRISPI_API_URL}/chat/preferences}`, {
+  const preferences = fetch(`${GRISPI_API_URL}/chat/preferences`, {
     method:"GET",
     mode:"cors",
     headers: {
@@ -142,29 +142,37 @@
   });
 
   // listen for ready message then send init message when preferences promise is fullfilled
-  document.addEventListener("message", (event) => {
-    const message = JSON.parse(event.data);
+  window.addEventListener("message", (event) => {
+    let message;
+    try {
+      message = JSON.parse(event.data);
+    } catch (e) {
+      console.log('Cannot parse event data', event.data);
+      return;
+    }
     const {auth, data, type} = message;
     console.debug("event came", type, auth)
     if (auth !== authKey) {
-      console.debug("Not authenticated")
+      console.error("Window is not authenticated!");
       return;
     }
     if (type === EVENTS.READY) {
       preferences // TODO error handling
         .then(response => response.json())
         .then((parsedPreferences) => {
-        const readyMessage = JSON.stringify({
-          type: EVENTS.INIT,
-          auth: authKey,
-          data: {
-            tenantId: tenantId(),
-            chatId: window.localStorage.getItem(LOCAL_STORAGE_KEY_CHAT_ID) ?? undefined,
-            text: parsedPreferences.text,
-          }
+          const initMessage = JSON.stringify({
+            type: EVENTS.INIT,
+            auth: authKey,
+            data: {
+              tenantId: tenantId(),
+              chatId: window.localStorage.getItem(LOCAL_STORAGE_KEY_CHAT_ID) ?? undefined,
+              text: parsedPreferences.text,
+              //FIXME send the whole preferences
+            }
+          });
+
+          event.source.postMessage(initMessage, event.origin);//FIXME use iframe.src instea of event.origin
         });
-        event.source.postMessage(readyMessage, event.origin);
-      })
     } else if (type === EVENTS.NEW_CHAT_SESSION) {
       window.localStorage.setItem(LOCAL_STORAGE_KEY_CHAT_ID, data.chatId)
     }
