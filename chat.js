@@ -44,6 +44,7 @@
       z-index: 100000;
       color: #f8f9f9;
       background-image: url(https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/chat/default/48px.svg);
+      background-size: contain;
       display: block;
       filter: invert(1);
     }
