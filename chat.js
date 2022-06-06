@@ -29,10 +29,13 @@
 
   function style() {
     let startButtonIconSize;
+    let closeButtonIconSize;
     if (window.matchMedia("(max-width: 500px)").matches) {
-      startButtonIconSize = 2
+      startButtonIconSize = 2;
+      closeButtonIconSize = 1.5;
     } else {
       startButtonIconSize = 3;
+      closeButtonIconSize = 2;
     }
     return `
     <style>
@@ -44,6 +47,19 @@
       z-index: 100000;
       color: #f8f9f9;
       background-image: url(https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/chat/default/48px.svg);
+      background-size: contain;
+      display: block;
+      filter: invert(1);
+    }
+
+    #grispiChatCloseIcon::before {
+      content: "";
+      width: ${startButtonIconSize}rem;
+      height: ${startButtonIconSize}rem;
+      position: relative;
+      z-index: 100000;
+      color: #f8f9f9;
+      background-image: url(https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/close/default/48px.svg);
       background-size: contain;
       display: block;
       filter: invert(1);
@@ -128,8 +144,7 @@
       <section id="grispiChatContainer" style="${containerStyle}">
         <div id="grispiPopupHeader" style="${headerStyle}">
           <span style="${headerTextStyle}">Chat title</span>
-          <button id="grispiCloseButton" style="${grispiCloseButtonStyle}"><span class="material-symbols-outlined">
-      close
+          <button id="grispiCloseButton" style="${grispiCloseButtonStyle}"><span id="grispiChatCloseIcon">
       </span></button>
         </div>
         <iframe id="grispiIframe" src="${iframeUrl}" style="${iframeStyle}" referrerpolicy="origin"></iframe>
