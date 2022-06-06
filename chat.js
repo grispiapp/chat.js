@@ -27,22 +27,43 @@
   const authKey = uuidv4();
   const iframeUrl = `${CHAT_POPUP_URL}?url=${HOST_URL}&auth=${authKey}`
 
+  function style() {
+    let startButtonIconSize;
+    if (window.matchMedia("(max-width: 500px)").matches) {
+      startButtonIconSize = 2
+    } else {
+      startButtonIconSize = 3;
+    }
+    return `
+    <style>
+    #grispiChatStartIcon::before {
+      content: "";
+      width: ${startButtonIconSize}rem;
+      height: ${startButtonIconSize}rem;
+      position: relative;
+      z-index: 100000;
+      color: #f8f9f9;
+      background-image: url(https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/chat/default/48px.svg);
+      display: block;
+      filter: invert(1);
+    }
+    </style>
+    `;
+  }
+
   function template() {
     let startButtonHeight;
     let startButtonWidth;
-    let startButtonIconSize;
     let frameHeight;
     let frameWidth;
     if (window.matchMedia("(max-width: 500px)").matches) {
       startButtonHeight = 50;
       startButtonWidth = 50;
-      startButtonIconSize = 2
       frameWidth = 350;
       frameHeight = 600;
     } else {
       startButtonHeight = 80;
       startButtonWidth = 80;
-      startButtonIconSize = 3;
       frameWidth = 400;
       frameHeight = 650;
     }
@@ -66,11 +87,6 @@
     align-content: center;justify-content: center;align-items: stretch;
   `;
 
-    const grispiChatSymbol = `
-    font-size: ${startButtonIconSize}rem;
-    color:#f8f9f9;
-    `
-
     const headerTextStyle = `
     font-family: 'Montserrat', sans-serif;
     color:#f8f9f9;
@@ -82,11 +98,11 @@
 
     const grispiCloseButtonStyle = `
   	cursor: pointer;
-        border: 0px solid #3498db;
-        background-color: transparent;
-        height: 50px;
-        color: #f8f9f9;
-        padding-right:10px
+    border: 0px solid #3498db;
+    background-color: transparent;
+    height: 50px;
+    color: #f8f9f9;
+    padding-right:10px
   `;
 
     const iframeStyle = `
@@ -119,11 +135,12 @@
       </section>
       
       <section id="grispiChatStartContainer" style="${grispiChatStartContainerStyle}">
-        <span class="material-symbols-outlined" style='${grispiChatSymbol}'>chat</span>
+        <span id="grispiChatStartIcon"></span>
       </section>
     `;
   }
 
+  document.head.insertAdjacentHTML('beforeend', style());
   document.body.insertAdjacentHTML('beforeend', template());
   const iframe = document.getElementById("grispiIframe");
   const popup = document.getElementById('grispiChatContainer');
@@ -166,8 +183,8 @@
             data: {
               tenantId: tenantId(),
               chatId: window.localStorage.getItem(LOCAL_STORAGE_KEY_CHAT_ID) ?? undefined,
-              text: parsedPreferences.text,
-              //FIXME send the whole preferences
+              preferences: parsedPreferences,
+              online: true //FIXME
             }
           });
 
