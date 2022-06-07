@@ -1,6 +1,12 @@
 (function() {
   'use strict';
 
+  const ENV_PROD = 'prod';
+  const ENV_STAGING = 'staging';
+  const ENV_LOCAL = 'local';
+
+  const DEBUG_MODE_URL_QUERY_PARAMETER = 'debug';
+  const ENVIRONMENT_URL_QUERY_PARAMETER = 'env';
   const LOCAL_STORAGE_KEY_CHAT_ID = "grispi.chat.chatId";
 
   const EVENTS = {
@@ -9,21 +15,19 @@
     NEW_CHAT_SESSION: 'grispi.chat.request.newChatSession'
   };
 
-  const GRISPI_API_URL = 'https://api.grispi.dev';
-  const CHAT_POPUP_URL = 'https://chat-ui.grispi.dev';
+  const {inDebugMode, tenantId, environment} = extractSearchParamsInSrc();
 
-  // const GRISPI_API_URL = 'http://localhost:8080';
-  // const CHAT_POPUP_URL = 'http://localhost:3000';
+  const GRISPI_API_URL = grispiApiUrl(environment);
+  const CHAT_POPUP_URL = chatPopupIframeUrl(environment);
 
   /**
    * The customer's own site url (3rd party website). The one that the end user browses.
-   * @type {string}
    */
   const HOST_URL = location.href;
 
-  const scriptUrl = document.currentScript?.src;
   const authKey = uuidv4();
-  const iframeUrl = `${CHAT_POPUP_URL}?url=${HOST_URL}&auth=${authKey}`
+  const iframeUrlDebugParam = inDebugMode ? '&debug=true' : '';
+  const iframeUrl = `${CHAT_POPUP_URL}?url=${HOST_URL}&auth=${authKey}${iframeUrlDebugParam}`
 
   function style() {
     let startButtonIconSize;
@@ -36,7 +40,7 @@
       closeButtonIconSize = 2;
     }
     return `
-    <style>
+    <style id="grispiChatJsStyle">
     #grispiChatStartIcon::before {
       content: "";
       width: ${startButtonIconSize}rem;
@@ -168,8 +172,7 @@
     method:"GET",
     mode:"cors",
     headers: {
-      "tenantId": tenantId(),
-    	"Referer": HOST_URL //FIXME make browser send this
+      "tenantId": tenantId
     }
   });
 
@@ -197,7 +200,7 @@
             type: EVENTS.INIT,
             auth: authKey,
             data: {
-              tenantId: tenantId(),
+              tenantId: tenantId,
               chatId: window.localStorage.getItem(LOCAL_STORAGE_KEY_CHAT_ID) ?? undefined,
               preferences: parsedPreferences,
               online: true //FIXME
@@ -211,9 +214,21 @@
     }
   });
 
-  // Private functions
-  function tenantId() {
-    return new URL(scriptUrl).searchParams.get('tenantId');
+  function extractSearchParamsInSrc() {
+
+    if (!document.currentScript || !document.currentScript.src) {
+      console.error(`'document.currentScript' is not available!`);
+      return {};
+    }
+
+    const searchParams = new URL(document.currentScript?.src).searchParams;
+
+    const debugModeParam = searchParams.get(DEBUG_MODE_URL_QUERY_PARAMETER) || '';
+    return {
+      tenantId: searchParams.get('tenantId'),
+      inDebugMode: debugModeParam.toLowerCase() === 'true',
+      environment: parseEnv(searchParams.get(ENVIRONMENT_URL_QUERY_PARAMETER)),
+    };
   }
 
   function uuidv4() {
@@ -222,5 +237,26 @@
     );
   }
 
-})();
+  function parseEnv(env) {
+    if (!env || env.trim().length === 0) return ENV_PROD;
+    if (env.toLowerCase() === ENV_STAGING) return ENV_STAGING;
+    if (env.toLowerCase() === ENV_LOCAL) return ENV_LOCAL;
+  }
 
+  function grispiApiUrl(env) {
+    switch (env) {
+      case ENV_LOCAL: return 'http://localhost:8080';
+      case ENV_STAGING: return 'https://api.grispi.dev';
+      case ENV_PROD: return 'https://api.grispi.com';
+    }
+  }
+
+  function chatPopupIframeUrl(env) {
+    switch (env) {
+      case ENV_LOCAL: return 'http://localhost:3000';
+      case ENV_STAGING: return 'https://chat-ui.grispi.dev';
+      case ENV_PROD: return 'https://chat-ui.grispi.com';
+    }
+  }
+
+})();
