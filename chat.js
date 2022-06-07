@@ -9,13 +9,11 @@
     NEW_CHAT_SESSION: 'grispi.chat.request.newChatSession'
   };
 
-  // const GRISPI_API_URL = 'https://api.grispi.com';
-  // const CHAT_API_URL = 'https://chat.grispi.com';
-  // const CHAT_POPUP_URL = 'https://chat.grispi.com/ui';
+  const GRISPI_API_URL = 'https://api.grispi.dev';
+  const CHAT_POPUP_URL = 'https://chat-ui.grispi.com';
 
-  const GRISPI_API_URL = 'http://localhost:8080';
-  const CHAT_API_URL = 'http://localhost:8090';
-  const CHAT_POPUP_URL = 'http://localhost:3000';
+  // const GRISPI_API_URL = 'http://localhost:8080';
+  // const CHAT_POPUP_URL = 'http://localhost:3000';
 
   /**
    * The customer's own site url (3rd party website). The one that the end user browses.
