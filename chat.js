@@ -10,7 +10,7 @@
   };
 
   const GRISPI_API_URL = 'https://api.grispi.dev';
-  const CHAT_POPUP_URL = 'https://chat-ui.grispi.com';
+  const CHAT_POPUP_URL = 'https://chat-ui.grispi.dev';
 
   // const GRISPI_API_URL = 'http://localhost:8080';
   // const CHAT_POPUP_URL = 'http://localhost:3000';
