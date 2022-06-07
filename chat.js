@@ -144,7 +144,7 @@
     return `
       <section id="grispiChatContainer" style="${containerStyle}">
         <div id="grispiPopupHeader" style="${headerStyle}">
-          <span style="${headerTextStyle}">${headerTitle}</span>
+          <span id="grispiChatTitle" style="${headerTextStyle}"></span>
           <button id="grispiCloseButton" style="${grispiCloseButtonStyle}"><span id="grispiChatCloseIcon">
       </span></button>
         </div>
@@ -161,6 +161,7 @@
   document.body.insertAdjacentHTML('beforeend', template());
   const iframe = document.getElementById("grispiIframe");
   const popup = document.getElementById('grispiChatContainer');
+  const headerTitleElem = document.getElementById('grispiChatTitle');
   const closeBtn = document.getElementById('grispiCloseButton');
   const startBtn = document.getElementById('grispiChatStartContainer');
   closeBtn.onclick = () => {popup.style.display = 'none'; startBtn.style.display = 'flex'};
@@ -194,7 +195,7 @@
       preferences // TODO error handling
         .then(response => response.json())
         .then((parsedPreferences) => {
-          headerTitle = parsedPreferences.text.title
+          headerTitleElem.insertAdjacentText = parsedPreferences.text.title
           const initMessage = JSON.stringify({
             type: EVENTS.INIT,
             auth: authKey,
