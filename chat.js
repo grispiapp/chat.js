@@ -23,7 +23,6 @@
    */
   const HOST_URL = location.href;
 
-  let headerTitle;
   const scriptUrl = document.currentScript?.src;
   const authKey = uuidv4();
   const iframeUrl = `${CHAT_POPUP_URL}?url=${HOST_URL}&auth=${authKey}`
@@ -195,7 +194,7 @@
       preferences // TODO error handling
         .then(response => response.json())
         .then((parsedPreferences) => {
-          headerTitleElem.insertAdjacentText = parsedPreferences.text.title
+          headerTitleElem.insertAdjacentText("afterbegin",parsedPreferences.text.title)
           const initMessage = JSON.stringify({
             type: EVENTS.INIT,
             auth: authKey,
