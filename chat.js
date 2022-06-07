@@ -23,6 +23,7 @@
    */
   const HOST_URL = location.href;
 
+  let headerTitle;
   const scriptUrl = document.currentScript?.src;
   const authKey = uuidv4();
   const iframeUrl = `${CHAT_POPUP_URL}?url=${HOST_URL}&auth=${authKey}`
@@ -54,8 +55,8 @@
 
     #grispiChatCloseIcon::before {
       content: "";
-      width: ${startButtonIconSize}rem;
-      height: ${startButtonIconSize}rem;
+      width: ${closeButtonIconSize}rem;
+      height: ${closeButtonIconSize}rem;
       position: relative;
       z-index: 100000;
       color: #f8f9f9;
@@ -143,7 +144,7 @@
     return `
       <section id="grispiChatContainer" style="${containerStyle}">
         <div id="grispiPopupHeader" style="${headerStyle}">
-          <span style="${headerTextStyle}">Chat title</span>
+          <span style="${headerTextStyle}">${headerTitle}</span>
           <button id="grispiCloseButton" style="${grispiCloseButtonStyle}"><span id="grispiChatCloseIcon">
       </span></button>
         </div>
@@ -193,6 +194,7 @@
       preferences // TODO error handling
         .then(response => response.json())
         .then((parsedPreferences) => {
+          headerTitle = parsedPreferences.text.title
           const initMessage = JSON.stringify({
             type: EVENTS.INIT,
             auth: authKey,
