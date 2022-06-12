@@ -179,6 +179,17 @@
     }
   });
 
+  const onlineStatus = async () => {
+    const response = await fetch(`${GRISPI_API_URL}/chat/status`, {
+      method:"GET",
+      mode:"cors",
+      headers: {
+        "tenantId": tenantId
+      }
+    })
+    return await response.json()
+  }
+
   // listen for ready message then send init message when preferences promise is fullfilled
   window.addEventListener("message", (event) => {
     let message;
@@ -207,7 +218,7 @@
               tenantId: tenantId,
               chatId: window.localStorage.getItem(LOCAL_STORAGE_KEY_CHAT_ID) ?? undefined,
               preferences: parsedPreferences,
-              online: true //FIXME
+              online: onlineStatus()
             }
           });
 
