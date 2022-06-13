@@ -227,7 +227,7 @@
     } else if (type === EVENTS.NEW_CHAT_SESSION) {
       window.localStorage.setItem(LOCAL_STORAGE_KEY_CHAT_ID, data.chatId)
     } else if (type === EVENTS.LAST_MESSAGE_TIME) {
-      window.localStorage.setITEM(LOCAL_STORAGE_KEY_LAST_MESSAGE_TIME, data.lastMessageTime)
+      window.localStorage.setItem(LOCAL_STORAGE_KEY_LAST_MESSAGE_TIME, data.lastMessageTime)
     } else if (type === EVENTS.UNREAD_MESSAGES_COUNT) {
       //TODO add numbers to button to show
     }
