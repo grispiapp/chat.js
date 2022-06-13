@@ -187,7 +187,7 @@
         "tenantId": tenantId
       }
     })
-    return await response.json()
+    return response.json()
   }
 
   // listen for ready message then send init message when preferences promise is fullfilled
@@ -218,7 +218,7 @@
               tenantId: tenantId,
               chatId: window.localStorage.getItem(LOCAL_STORAGE_KEY_CHAT_ID) ?? undefined,
               preferences: parsedPreferences,
-              online: onlineStatus()
+              online: onlineStatus().then(data => data)
             }
           });
 
