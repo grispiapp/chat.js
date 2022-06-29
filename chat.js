@@ -187,7 +187,8 @@
         "tenantId": tenantId
       }
     })
-    return response.json()
+    return await response.json()
+
   }
 
   // listen for ready message then send init message when preferences promise is fullfilled
@@ -208,7 +209,7 @@
     if (type === EVENTS.READY) {
       preferences // TODO error handling
         .then(response => response.json())
-        .then((parsedPreferences) => {
+        .then(async (parsedPreferences) => {
           headerTitleElem.insertAdjacentText("afterbegin",parsedPreferences.text.title)
           const initMessage = JSON.stringify({
             type: EVENTS.INIT,
@@ -218,9 +219,10 @@
               tenantId: tenantId,
               chatId: window.localStorage.getItem(LOCAL_STORAGE_KEY_CHAT_ID) ?? undefined,
               preferences: parsedPreferences,
-              online: onlineStatus().then(data => data)
+              online: await onlineStatus(),
             }
           });
+          console.log(initMessage)
 
           event.source.postMessage(initMessage, event.origin);//FIXME use iframe.src instea of event.origin
         });
