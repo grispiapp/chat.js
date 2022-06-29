@@ -222,7 +222,6 @@
               online: await onlineStatus(),
             }
           });
-          console.log(initMessage)
 
           event.source.postMessage(initMessage, event.origin);//FIXME use iframe.src instea of event.origin
         });
