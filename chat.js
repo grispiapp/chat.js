@@ -8,11 +8,14 @@
   const DEBUG_MODE_URL_QUERY_PARAMETER = 'debug';
   const ENVIRONMENT_URL_QUERY_PARAMETER = 'env';
   const LOCAL_STORAGE_KEY_CHAT_ID = "grispi.chat.chatId";
+  const LOCAL_STORAGE_KEY_LAST_MESSAGE_TIME = "grispi.chat.lastMessageTime"
 
   const EVENTS = {
     READY: 'grispi.chat.request.ready',
     INIT: 'grispi.chat.response.init',
-    NEW_CHAT_SESSION: 'grispi.chat.request.newChatSession'
+    NEW_CHAT_SESSION: 'grispi.chat.request.newChatSession',
+    LAST_MESSAGE_TIME: 'grispi.chat.request.lastMessageTime',
+    UNREAD_MESSAGES_COUNT: 'grispi.chat.request.unreadMessageCount'
   };
 
   const {inDebugMode, tenantId, environment} = extractSearchParamsInSrc();
@@ -176,6 +179,17 @@
     }
   });
 
+  const onlineStatus = async () => {
+    const response = await fetch(`${GRISPI_API_URL}/chat/status`, {
+      method:"GET",
+      mode:"cors",
+      headers: {
+        "tenantId": tenantId
+      }
+    })
+    return response.json()
+  }
+
   // listen for ready message then send init message when preferences promise is fullfilled
   window.addEventListener("message", (event) => {
     let message;
@@ -200,10 +214,11 @@
             type: EVENTS.INIT,
             auth: authKey,
             data: {
+              lastMessageTime: window.localStorage.getItem(LOCAL_STORAGE_KEY_LAST_MESSAGE_TIME) ?? undefined,
               tenantId: tenantId,
               chatId: window.localStorage.getItem(LOCAL_STORAGE_KEY_CHAT_ID) ?? undefined,
               preferences: parsedPreferences,
-              online: true //FIXME
+              online: onlineStatus().then(data => data)
             }
           });
 
@@ -211,6 +226,10 @@
         });
     } else if (type === EVENTS.NEW_CHAT_SESSION) {
       window.localStorage.setItem(LOCAL_STORAGE_KEY_CHAT_ID, data.chatId)
+    } else if (type === EVENTS.LAST_MESSAGE_TIME) {
+      window.localStorage.setItem(LOCAL_STORAGE_KEY_LAST_MESSAGE_TIME, data.lastMessageTime)
+    } else if (type === EVENTS.UNREAD_MESSAGES_COUNT) {
+      //TODO add numbers to button to show
     }
   });
 
