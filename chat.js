@@ -94,6 +94,7 @@
     bottom: 10px;
     right: 10px;
     border: 0;
+    z-index: 2147483645;
     height: ${frameHeight}px;
     width: ${frameWidth}px;
     border: 1px solid black;
