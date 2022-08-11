@@ -97,10 +97,13 @@
     z-index: 2147483645;
     height: ${frameHeight}px;
     width: ${frameWidth}px;
-    border: 1px solid black;
     background: #632d91;
     display: none;
     flex-direction: column;
+    border-radius: 15px;
+    -webkit-box-shadow: 2px 10px 31px 0px rgba(0,0,0,0.33);
+    -moz-box-shadow: 2px 10px 31px 0px rgba(0,0,0,0.33);
+    box-shadow: 2px 10px 31px 0px rgba(0,0,0,0.33);
   `;
 
         const headerStyle = `
@@ -130,6 +133,9 @@
 
         const iframeStyle = `
     flex-grow: 2;
+    border: none;
+    border-bottom-left-radius: 15px;
+    border-bottom-right-radius: 15px;
   `;
 
         const grispiChatStartContainerStyle = `
