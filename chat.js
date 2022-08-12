@@ -111,6 +111,7 @@
     display: flex;
     flex-grow: 0;
     align-content: center;justify-content: center;align-items: stretch;
+    background-color: #632d91	;
   `;
 
         const headerTextStyle = `
@@ -143,7 +144,6 @@
     bottom: 20px;
     right: 20px;
     border: 0;
-    background-color: #632d91	;
     display: flex;
     flex-direction: column;
     cursor: pointer;
