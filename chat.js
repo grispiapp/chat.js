@@ -112,6 +112,8 @@
     flex-grow: 0;
     align-content: center;justify-content: center;align-items: stretch;
     background-color: #632d91	;
+    border-top-right-radius: 15px;
+    border-top-left-radius: 15px;
   `;
 
         const headerTextStyle = `
