@@ -97,7 +97,6 @@
     z-index: 2147483645;
     height: ${frameHeight}px;
     width: ${frameWidth}px;
-    background: #632d91;
     display: none;
     flex-direction: column;
     border-radius: 15px;
@@ -146,6 +145,7 @@
     bottom: 20px;
     right: 20px;
     border: 0;
+    background-color: #632d91	;
     display: flex;
     flex-direction: column;
     cursor: pointer;
