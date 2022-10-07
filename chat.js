@@ -187,14 +187,6 @@
         startBtn.style.display = 'none';
     };
 
-    const preferences = fetch(`${GRISPI_API_URL}/chat/preferences`, {
-        method: 'GET',
-        mode: 'cors',
-        headers: {
-            tenantId: tenantId
-        }
-    });
-
     const onlineStatus = async () => {
         const response = await fetch(`${GRISPI_API_URL}/chat/status`, {
             method: 'GET',
@@ -222,25 +214,26 @@
             return;
         }
         if (type === EVENTS.READY) {
-            preferences // TODO error handling
-                .then((response) => response.json())
-                .then(async (parsedPreferences) => {
-                    headerTitleElem.insertAdjacentText('afterbegin', parsedPreferences.text.title);
-                    const initMessage = JSON.stringify({
-                        type: EVENTS.INIT,
-                        auth: authKey,
-                        data: {
-                            lastMessageTime:
-                                window.localStorage.getItem(LOCAL_STORAGE_KEY_LAST_MESSAGE_TIME) ?? undefined,
-                            tenantId: tenantId,
-                            chatId: window.localStorage.getItem(LOCAL_STORAGE_KEY_CHAT_ID) ?? undefined,
-                            preferences: parsedPreferences,
-                            online: await onlineStatus()
-                        }
-                    });
+          fetch(`${GRISPI_API_URL}/chat/preferences`, {
+            method: 'GET', mode: 'cors', headers: {
+              tenantId: tenantId
+            }
+          }) // TODO error handling
+            .then((response) => response.json())
+            .then(async (parsedPreferences) => {
+              headerTitleElem.insertAdjacentText('afterbegin', parsedPreferences.text.title);
+              const initMessage = JSON.stringify({
+                type: EVENTS.INIT, auth: authKey, data: {
+                  lastMessageTime: window.localStorage.getItem(LOCAL_STORAGE_KEY_LAST_MESSAGE_TIME) ?? undefined,
+                  tenantId: tenantId,
+                  chatId: window.localStorage.getItem(LOCAL_STORAGE_KEY_CHAT_ID) ?? undefined,
+                  preferences: parsedPreferences,
+                  online: await onlineStatus()
+                }
+              });
 
-                    event.source.postMessage(initMessage, event.origin); //FIXME use iframe.src instea of event.origin
-                });
+              event.source.postMessage(initMessage, event.origin); //FIXME use iframe.src instea of event.origin
+            });
         } else if (type === EVENTS.NEW_CHAT_SESSION) {
             window.localStorage.setItem(LOCAL_STORAGE_KEY_CHAT_ID, data.chatId);
         } else if (type === EVENTS.LAST_MESSAGE_TIME) {
