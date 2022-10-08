@@ -1,24 +1,26 @@
-(function () {
-    'use strict';
+'use strict';
 
-    const ENV_PROD = 'prod';
-    const ENV_STAGING = 'staging';
-    const ENV_LOCAL = 'local';
+{
+  const DEBUG_MODE_URL_QUERY_PARAMETER = 'debug';
+  const ENVIRONMENT_URL_QUERY_PARAMETER = 'env';
+  const ENV_PROD = 'prod';
+  const ENV_STAGING = 'staging';
+  const ENV_LOCAL = 'local';
+  const {chatJsUrl, environment, inDebugMode, tenantId } = extractSearchParamsInSrc();
 
-    const DEBUG_MODE_URL_QUERY_PARAMETER = 'debug';
-    const ENVIRONMENT_URL_QUERY_PARAMETER = 'env';
+  typeof window === 'object' && window.addEventListener('DOMContentLoaded', () => {
+
+    //<editor-fold desc="Constant declarations">
     const LOCAL_STORAGE_KEY_CHAT_ID = 'grispi.chat.chatId';
     const LOCAL_STORAGE_KEY_LAST_MESSAGE_TIME = 'grispi.chat.lastMessageTime';
 
     const EVENTS = {
-        READY: 'grispi.chat.request.ready',
-        INIT: 'grispi.chat.response.init',
-        NEW_CHAT_SESSION: 'grispi.chat.request.newChatSession',
-        LAST_MESSAGE_TIME: 'grispi.chat.request.lastMessageTime',
-        UNREAD_MESSAGES_COUNT: 'grispi.chat.request.unreadMessageCount'
+      READY: 'grispi.chat.request.ready',
+      INIT: 'grispi.chat.response.init',
+      NEW_CHAT_SESSION: 'grispi.chat.request.newChatSession',
+      LAST_MESSAGE_TIME: 'grispi.chat.request.lastMessageTime',
+      UNREAD_MESSAGES_COUNT: 'grispi.chat.request.unreadMessageCount'
     };
-
-    const { inDebugMode, tenantId, environment } = extractSearchParamsInSrc();
 
     const GRISPI_API_URL = grispiApiUrl(environment);
     const CHAT_POPUP_URL = chatPopupIframeUrl(environment);
@@ -31,19 +33,41 @@
     const authKey = uuidv4();
     const iframeUrlDebugParam = inDebugMode ? '&debug=true' : '';
     const iframeUrl = `${CHAT_POPUP_URL}?url=${HOST_URL}&auth=${authKey}${iframeUrlDebugParam}`;
+    //</editor-fold>
 
-    function style() {
-        let startButtonIconSize;
-        let closeButtonIconSize;
-        if (window.matchMedia('(max-width: 500px)').matches) {
-            startButtonIconSize = 1.7;
-            closeButtonIconSize = 1.5;
-        } else {
-            startButtonIconSize = 2.7;
-            closeButtonIconSize = 2;
+    //<editor-fold desc="onlineStatus()">
+    const onlineStatus = async () => {
+      const response = await fetch(`${GRISPI_API_URL}/chat/status`, {
+        method: 'GET', mode: 'cors', headers: {
+          tenantId: tenantId
         }
-        return `
+      });
+      return await response.json();
+    };
+    //</editor-fold>
+
+    //<editor-fold desc="style()">
+    function style() {
+      let startButtonIconSize;
+      let closeButtonIconSize;
+      if (window.matchMedia('(max-width: 500px)').matches) {
+        startButtonIconSize = 1.7;
+        closeButtonIconSize = 1.5;
+      } else {
+        startButtonIconSize = 2.7;
+        closeButtonIconSize = 2;
+      }
+      // https://fonts.google.com/icons
+      return `
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <style id="grispiChatJsStyle">
+    .material-symbols-rounded {
+      font-variation-settings:
+      'FILL' 1,
+      'wght' 400,
+      'GRAD' 0,
+      'opsz' 48
+    }
     #grispiChatStartIcon::before {
       content: "";
       width: ${startButtonIconSize}rem;
@@ -73,23 +97,26 @@
     `;
     }
 
+    //</editor-fold>
+
+    //<editor-fold desc="template()">
     function template() {
-        let startButtonHeight;
-        let startButtonWidth;
-        let frameHeight;
-        let frameWidth;
-        if (window.matchMedia('(max-width: 500px)').matches) {
-            startButtonHeight = 50;
-            startButtonWidth = 50;
-            frameWidth = 350;
-            frameHeight = 600;
-        } else {
-            startButtonHeight = 80;
-            startButtonWidth = 80;
-            frameWidth = 400;
-            frameHeight = 650;
-        }
-        const containerStyle = `
+      let startButtonHeight;
+      let startButtonWidth;
+      let frameHeight;
+      let frameWidth;
+      if (window.matchMedia('(max-width: 500px)').matches) {
+        startButtonHeight = 50;
+        startButtonWidth = 50;
+        frameWidth = 350;
+        frameHeight = 600;
+      } else {
+        startButtonHeight = 80;
+        startButtonWidth = 80;
+        frameWidth = 400;
+        frameHeight = 650;
+      }
+      const containerStyle = `
     position: fixed;
     bottom: 10px;
     right: 10px;
@@ -105,7 +132,7 @@
     box-shadow: 2px 10px 31px 0px rgba(0,0,0,0.33);
   `;
 
-        const headerStyle = `
+      const headerStyle = `
     height: 50px;
     display: flex;
     flex-grow: 0;
@@ -115,7 +142,7 @@
     border-top-left-radius: 15px;
   `;
 
-        const headerTextStyle = `
+      const headerTextStyle = `
     font-family: 'Montserrat', sans-serif;
     color:#f8f9f9;
 		flex-grow: 1;
@@ -124,7 +151,7 @@
     padding-left: 10px;
   `;
 
-        const grispiCloseButtonStyle = `
+      const grispiCloseButtonStyle = `
   	cursor: pointer;
     border: 0px solid #3498db;
     background-color: transparent;
@@ -133,14 +160,14 @@
     padding-right:10px
   `;
 
-        const iframeStyle = `
+      const iframeStyle = `
     flex-grow: 2;
     border: none;
     border-bottom-left-radius: 15px;
     border-bottom-right-radius: 15px;
   `;
 
-        const grispiChatStartContainerStyle = `
+      const grispiChatStartContainerStyle = `
   	position: fixed;
     bottom: 20px;
     right: 20px;
@@ -155,7 +182,38 @@
     width: ${startButtonWidth}px;
     border-radius: 50%
   `;
-        return `
+      const grispiChatMessageCountStyle = `
+    background-color: orangered;
+    width: 30px;
+    height: 30px;
+    display: none;
+    position: absolute;
+    left: 0px;
+    border-radius: 15px;
+    color: white;
+    font-weight: bold;
+    font-family: sans-serif;
+    font-size: 16px;
+    text-align: center;
+    line-height: 30px;
+    bottom: -8px;
+      `;
+
+      const grispiChatPromptStyle = `
+    position: absolute;
+    width: 228px;
+    background-color: white;
+    border: 1px solid lightgrey;
+    border-radius: 18px;
+    padding: 8px;
+    right: 85px;
+    font-family: sans-serif;
+      `;
+
+      const grispiChatPromptHideStyle = `
+        cursor: pointer;
+      `;
+      return `
       <section id="grispiChatContainer" style="${containerStyle}">
         <div id="grispiPopupHeader" style="${headerStyle}">
           <span id="grispiChatTitle" style="${headerTextStyle}"></span>
@@ -167,9 +225,16 @@
 
       <section id="grispiChatStartContainer" style="${grispiChatStartContainerStyle}">
         <span id="grispiChatStartIcon"></span>
+        <span id="grispiChatMessageCount" style="${grispiChatMessageCountStyle}"></span>
+        <span id="grispiChatPrompt" style="${grispiChatPromptStyle}">
+          <span id="grispiChatPromptText">Sohbete başlamak için tıklayın.</span>
+          <span id="grispiChatPromptHide" style="${grispiChatPromptHideStyle}" class="material-symbols-rounded">close</span>
+        </span>
       </section>
     `;
     }
+
+    //</editor-fold>
 
     document.head.insertAdjacentHTML('beforeend', style());
     document.body.insertAdjacentHTML('beforeend', template());
@@ -178,118 +243,140 @@
     const headerTitleElem = document.getElementById('grispiChatTitle');
     const closeBtn = document.getElementById('grispiCloseButton');
     const startBtn = document.getElementById('grispiChatStartContainer');
+    const unreadCount = document.getElementById('grispiChatMessageCount');
+    const promptHideBtn = document.getElementById('grispiChatPromptHide');
+
     closeBtn.onclick = () => {
-        popup.style.display = 'none';
-        startBtn.style.display = 'flex';
+      popup.style.display = 'none';
+      startBtn.style.display = 'flex';
     };
     startBtn.onclick = () => {
-        popup.style.display = 'flex';
-        startBtn.style.display = 'none';
+      popup.style.display = 'flex';
+      startBtn.style.display = 'none';
     };
+    startBtn.showWarningSign = function () {
+      this.insertAdjacentHTML('afterbegin', `<span class="material-symbols-rounded" style=" color: orangered; position: absolute; left: 3px; top: -10px; "> warning </span>`);
+    }
+    startBtn.updateMessageCount = function (messageCount) {
+      if (messageCount > 0) {
+        unreadCount.innerText = messageCount;
+        unreadCount.style.display = 'inline'; //element is span hence display is inline
+      } else {
+        unreadCount.innerText = '';
+        unreadCount.style.display = 'none';
+      }
+    }
 
-    const onlineStatus = async () => {
-        const response = await fetch(`${GRISPI_API_URL}/chat/status`, {
-            method: 'GET',
-            mode: 'cors',
-            headers: {
-                tenantId: tenantId
-            }
-        });
-        return await response.json();
+    promptHideBtn.onclick = e => {
+      console.log('done');
+      e.cancelBubble = true;
     };
 
     // listen for ready message then send init message when preferences promise is fullfilled
     window.addEventListener('message', (event) => {
-        let message;
-        try {
-            message = JSON.parse(event.data);
-        } catch (e) {
-            console.log('Cannot parse event data', event.data);
-            return;
-        }
-        const { auth, data, type } = message;
-        console.debug('event came', type, auth);
-        if (auth !== authKey) {
-            console.error('Window is not authenticated!');
-            return;
-        }
-        if (type === EVENTS.READY) {
-          fetch(`${GRISPI_API_URL}/chat/preferences`, {
-            method: 'GET', mode: 'cors', headers: {
-              tenantId: tenantId
+      let message;
+      try {
+        message = JSON.parse(event.data);
+      } catch (e) {
+        console.log('Cannot parse event data', event.data);
+        return;
+      }
+      const {auth, data, type} = message;
+      console.debug('event came', type, auth);
+      if (auth !== authKey) {
+        console.error('Window is not authenticated!');
+        return;
+      }
+      if (type === EVENTS.READY) {
+        fetch(`${GRISPI_API_URL}/chat/preferences`, {
+          method: 'GET', mode: 'cors', headers: {
+            tenantId: tenantId
+          }
+        })
+          .then((response) => {
+            if (!response.ok) {
+              // get error message from body or default to response status
+              const error = `${response.status} ${response.statusText}`;
+              return Promise.reject(error);
             }
-          }) // TODO error handling
-            .then((response) => response.json())
-            .then(async (parsedPreferences) => {
-              headerTitleElem.insertAdjacentText('afterbegin', parsedPreferences.text.title);
-              const initMessage = JSON.stringify({
-                type: EVENTS.INIT, auth: authKey, data: {
-                  lastMessageTime: window.localStorage.getItem(LOCAL_STORAGE_KEY_LAST_MESSAGE_TIME) ?? undefined,
-                  tenantId: tenantId,
-                  chatId: window.localStorage.getItem(LOCAL_STORAGE_KEY_CHAT_ID) ?? undefined,
-                  preferences: parsedPreferences,
-                  online: await onlineStatus()
-                }
-              });
-
-              event.source.postMessage(initMessage, event.origin); //FIXME use iframe.src instea of event.origin
+            return response.json();
+          })
+          .then(async (parsedPreferences) => {
+            headerTitleElem.insertAdjacentText('afterbegin', parsedPreferences.text.title);
+            const initMessage = JSON.stringify({
+              type: EVENTS.INIT, auth: authKey, data: {
+                lastMessageTime: window.localStorage.getItem(LOCAL_STORAGE_KEY_LAST_MESSAGE_TIME) ?? undefined,
+                tenantId: tenantId,
+                chatId: window.localStorage.getItem(LOCAL_STORAGE_KEY_CHAT_ID) ?? undefined,
+                preferences: parsedPreferences,
+                online: await onlineStatus()
+              }
             });
-        } else if (type === EVENTS.NEW_CHAT_SESSION) {
-            window.localStorage.setItem(LOCAL_STORAGE_KEY_CHAT_ID, data.chatId);
-        } else if (type === EVENTS.LAST_MESSAGE_TIME) {
-            window.localStorage.setItem(LOCAL_STORAGE_KEY_LAST_MESSAGE_TIME, data.lastMessageTime);
-        } else if (type === EVENTS.UNREAD_MESSAGES_COUNT) {
-            //TODO add numbers to button to show
-        }
+            event.source.postMessage(initMessage, event.origin); //FIXME use iframe.src instead of event.origin
+          })
+          .catch(error => {
+            startBtn.showWarningSign();
+            console.error('An error occurred while fetching preferences!', error);
+            iframe.src = new URL(`config-error.html?msg=${error}`, chatJsUrl);
+            headerTitleElem.innerText = 'Grispi sohbet';
+          });
+      } else if (type === EVENTS.NEW_CHAT_SESSION) {
+        window.localStorage.setItem(LOCAL_STORAGE_KEY_CHAT_ID, data.chatId);
+      } else if (type === EVENTS.LAST_MESSAGE_TIME) {
+        window.localStorage.setItem(LOCAL_STORAGE_KEY_LAST_MESSAGE_TIME, data.lastMessageTime);
+      } else if (type === EVENTS.UNREAD_MESSAGES_COUNT) {
+        startBtn.updateMessageCount(data.count);
+      }
     });
 
-    function extractSearchParamsInSrc() {
-        if (!document.currentScript || !document.currentScript.src) {
-            console.error(`'document.currentScript' is not available!`);
-            return {};
-        }
-
-        const searchParams = new URL(document.currentScript?.src).searchParams;
-
-        const debugModeParam = searchParams.get(DEBUG_MODE_URL_QUERY_PARAMETER) || '';
-        return {
-            tenantId: searchParams.get('tenantId'),
-            inDebugMode: debugModeParam.toLowerCase() === 'true',
-            environment: parseEnv(searchParams.get(ENVIRONMENT_URL_QUERY_PARAMETER))
-        };
-    }
-
     function uuidv4() {
-        return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) =>
-            (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)
-        );
-    }
-
-    function parseEnv(env) {
-        if (!env || env.trim().length === 0) return ENV_PROD;
-        if (env.toLowerCase() === ENV_STAGING) return ENV_STAGING;
-        if (env.toLowerCase() === ENV_LOCAL) return ENV_LOCAL;
+      return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) => (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16));
     }
 
     function grispiApiUrl(env) {
-        switch (env) {
-            case ENV_LOCAL:
-                return 'http://localhost:8080';
-            case ENV_STAGING:
-                return 'https://api.grispi.dev';
-            case ENV_PROD:
-                return 'https://api.grispi.com';
-        }
+      switch (env) {
+        case ENV_LOCAL:
+          return 'http://localhost:8080';
+        case ENV_STAGING:
+          return 'https://api.grispi.dev';
+        case ENV_PROD:
+          return 'https://api.grispi.com';
+      }
     }
 
     function chatPopupIframeUrl(env) {
-        switch (env) {
-            case ENV_LOCAL:
-                return 'http://localhost:3000';
-            case ENV_STAGING:
-                return 'https://chat-ui.grispi.dev';
-            case ENV_PROD:
-                return 'https://chat-ui.grispi.com';
-        }
+      switch (env) {
+        case ENV_LOCAL:
+          return 'http://localhost:3000';
+        case ENV_STAGING:
+          return 'https://chat-ui.grispi.dev';
+        case ENV_PROD:
+          return 'https://chat-ui.grispi.com';
+      }
     }
-})();
+
+  });
+
+  function parseEnv(env) {
+    if (!env || env.trim().length === 0) return ENV_PROD;
+    if (env.toLowerCase() === ENV_STAGING) return ENV_STAGING;
+    if (env.toLowerCase() === ENV_LOCAL) return ENV_LOCAL;
+  }
+
+  function extractSearchParamsInSrc() {
+    if (!document.currentScript || !document.currentScript.src) {
+      console.error(`'document.currentScript' is not available!`);
+      return {};
+    }
+
+    const searchParams = new URL(document.currentScript?.src).searchParams;
+
+    const debugModeParam = searchParams.get(DEBUG_MODE_URL_QUERY_PARAMETER) || '';
+    return {
+      chatJsUrl: document.currentScript.src,
+      environment: parseEnv(searchParams.get(ENVIRONMENT_URL_QUERY_PARAMETER)),
+      inDebugMode: debugModeParam.toLowerCase() === 'true',
+      tenantId: searchParams.get('tenantId'),
+    };
+  }
+}
