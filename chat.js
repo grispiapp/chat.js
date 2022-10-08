@@ -1,250 +1,64 @@
 'use strict';
 
 {
+  //<editor-fold desc="Constant declarations">
   const DEBUG_MODE_URL_QUERY_PARAMETER = 'debug';
   const ENVIRONMENT_URL_QUERY_PARAMETER = 'env';
   const ENV_PROD = 'prod';
   const ENV_STAGING = 'staging';
   const ENV_LOCAL = 'local';
   const {chatJsUrl, environment, inDebugMode, tenantId } = extractSearchParamsInSrc();
+  const LOCAL_STORAGE_KEY_DISMISS_PROMPT = 'grispi.chat.dismissPrompt';
+  const LOCAL_STORAGE_KEY_CHAT_ID = 'grispi.chat.chatId';
+  const LOCAL_STORAGE_KEY_LAST_MESSAGE_TIME = 'grispi.chat.lastMessageTime';
+
+  const EVENTS = {
+    READY: 'grispi.chat.request.ready',
+    INIT: 'grispi.chat.response.init',
+    NEW_CHAT_SESSION: 'grispi.chat.request.newChatSession',
+    LAST_MESSAGE_TIME: 'grispi.chat.request.lastMessageTime',
+    UNREAD_MESSAGES_COUNT: 'grispi.chat.request.unreadMessageCount'
+  };
+
+  const GRISPI_API_URL = grispiApiUrl(environment);
+  const CHAT_POPUP_URL = chatPopupIframeUrl(environment);
+
+  /**
+   * The customer's own site url (3rd party website). The one that the end user browses.
+   */
+  const HOST_URL = location.href;
+
+  const authKey = uuidv4();
+  const iframeUrlDebugParam = inDebugMode ? '&debug=true' : '';
+  const iframeUrl = `${CHAT_POPUP_URL}?url=${HOST_URL}&auth=${authKey}${iframeUrlDebugParam}`;
+  //</editor-fold>
 
   typeof window === 'object' && window.addEventListener('DOMContentLoaded', () => {
 
-    //<editor-fold desc="Constant declarations">
-    const LOCAL_STORAGE_KEY_CHAT_ID = 'grispi.chat.chatId';
-    const LOCAL_STORAGE_KEY_LAST_MESSAGE_TIME = 'grispi.chat.lastMessageTime';
-
-    const EVENTS = {
-      READY: 'grispi.chat.request.ready',
-      INIT: 'grispi.chat.response.init',
-      NEW_CHAT_SESSION: 'grispi.chat.request.newChatSession',
-      LAST_MESSAGE_TIME: 'grispi.chat.request.lastMessageTime',
-      UNREAD_MESSAGES_COUNT: 'grispi.chat.request.unreadMessageCount'
-    };
-
-    const GRISPI_API_URL = grispiApiUrl(environment);
-    const CHAT_POPUP_URL = chatPopupIframeUrl(environment);
-
-    /**
-     * The customer's own site url (3rd party website). The one that the end user browses.
-     */
-    const HOST_URL = location.href;
-
-    const authKey = uuidv4();
-    const iframeUrlDebugParam = inDebugMode ? '&debug=true' : '';
-    const iframeUrl = `${CHAT_POPUP_URL}?url=${HOST_URL}&auth=${authKey}${iframeUrlDebugParam}`;
-    //</editor-fold>
-
-    //<editor-fold desc="onlineStatus()">
-    const onlineStatus = async () => {
-      const response = await fetch(`${GRISPI_API_URL}/chat/status`, {
-        method: 'GET', mode: 'cors', headers: {
-          tenantId: tenantId
-        }
-      });
-      return await response.json();
-    };
-    //</editor-fold>
-
-    //<editor-fold desc="style()">
-    function style() {
-      let startButtonIconSize;
-      let closeButtonIconSize;
-      if (window.matchMedia('(max-width: 500px)').matches) {
-        startButtonIconSize = 1.7;
-        closeButtonIconSize = 1.5;
-      } else {
-        startButtonIconSize = 2.7;
-        closeButtonIconSize = 2;
-      }
-      // https://fonts.google.com/icons
-      return `
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-    <style id="grispiChatJsStyle">
-    .material-symbols-rounded {
-      font-variation-settings:
-      'FILL' 1,
-      'wght' 400,
-      'GRAD' 0,
-      'opsz' 48
-    }
-    #grispiChatStartIcon::before {
-      content: "";
-      width: ${startButtonIconSize}rem;
-      height: ${startButtonIconSize}rem;
-      position: relative;
-      z-index: 100000;
-      color: #f8f9f9;
-      background-image: url(https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/chat/default/48px.svg);
-      background-size: contain;
-      display: block;
-      filter: invert(1);
+    if (document.getElementById('GrispiChat')) {
+      const errorMsg = `There's already an element with id "GrispiChat". Ensure that you only include "chat.js" once.`;
+      console.error(errorMsg);
+      inDebugMode && alert(errorMsg);
+      return;
     }
 
-    #grispiChatCloseIcon::before {
-      content: "";
-      width: ${closeButtonIconSize}rem;
-      height: ${closeButtonIconSize}rem;
-      position: relative;
-      z-index: 100000;
-      color: #f8f9f9;
-      background-image: url(https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/close/default/48px.svg);
-      background-size: contain;
-      display: block;
-      filter: invert(1);
-    }
-    </style>
-    `;
-    }
+    document.body.insertAdjacentHTML('beforeend', `<section id="GrispiChat"></section>`);
 
-    //</editor-fold>
+    // Fonts are not downloaded in shadow dom, they need to be in the main dom: https://stackoverflow.com/a/57623658/878361
+    document.body.insertAdjacentHTML('beforeend', `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />`);
+    const shadowDom = document.getElementById('GrispiChat').attachShadow({ mode: "open" });
 
-    //<editor-fold desc="template()">
-    function template() {
-      let startButtonHeight;
-      let startButtonWidth;
-      let frameHeight;
-      let frameWidth;
-      if (window.matchMedia('(max-width: 500px)').matches) {
-        startButtonHeight = 50;
-        startButtonWidth = 50;
-        frameWidth = 350;
-        frameHeight = 600;
-      } else {
-        startButtonHeight = 80;
-        startButtonWidth = 80;
-        frameWidth = 400;
-        frameHeight = 650;
-      }
-      const containerStyle = `
-    position: fixed;
-    bottom: 10px;
-    right: 10px;
-    border: 0;
-    z-index: 2147483645;
-    height: ${frameHeight}px;
-    width: ${frameWidth}px;
-    display: none;
-    flex-direction: column;
-    border-radius: 15px;
-    -webkit-box-shadow: 2px 10px 31px 0px rgba(0,0,0,0.33);
-    -moz-box-shadow: 2px 10px 31px 0px rgba(0,0,0,0.33);
-    box-shadow: 2px 10px 31px 0px rgba(0,0,0,0.33);
-  `;
+    const showPrompt = localStorage.getItem(LOCAL_STORAGE_KEY_DISMISS_PROMPT) !== 'true';
+    shadowDom.innerHTML = htmlTemplate(iframeUrl, showPrompt);
 
-      const headerStyle = `
-    height: 50px;
-    display: flex;
-    flex-grow: 0;
-    align-content: center;justify-content: center;align-items: stretch;
-    background-color: #632d91	;
-    border-top-right-radius: 15px;
-    border-top-left-radius: 15px;
-  `;
-
-      const headerTextStyle = `
-    font-family: 'Montserrat', sans-serif;
-    color:#f8f9f9;
-		flex-grow: 1;
-    display: flex;
-    align-items: center;
-    padding-left: 10px;
-  `;
-
-      const grispiCloseButtonStyle = `
-  	cursor: pointer;
-    border: 0px solid #3498db;
-    background-color: transparent;
-    height: 50px;
-    color: #f8f9f9;
-    padding-right:10px
-  `;
-
-      const iframeStyle = `
-    flex-grow: 2;
-    border: none;
-    border-bottom-left-radius: 15px;
-    border-bottom-right-radius: 15px;
-  `;
-
-      const grispiChatStartContainerStyle = `
-  	position: fixed;
-    bottom: 20px;
-    right: 20px;
-    border: 0;
-    background-color: #632d91	;
-    display: flex;
-    flex-direction: column;
-    cursor: pointer;
-    justify-content: center;
-    align-items: center;
-    height: ${startButtonHeight}px;
-    width: ${startButtonWidth}px;
-    border-radius: 50%
-  `;
-      const grispiChatMessageCountStyle = `
-    background-color: orangered;
-    width: 30px;
-    height: 30px;
-    display: none;
-    position: absolute;
-    left: 0px;
-    border-radius: 15px;
-    color: white;
-    font-weight: bold;
-    font-family: sans-serif;
-    font-size: 16px;
-    text-align: center;
-    line-height: 30px;
-    bottom: -8px;
-      `;
-
-      const grispiChatPromptStyle = `
-    position: absolute;
-    width: 228px;
-    background-color: white;
-    border: 1px solid lightgrey;
-    border-radius: 18px;
-    padding: 8px;
-    right: 85px;
-    font-family: sans-serif;
-      `;
-
-      const grispiChatPromptHideStyle = `
-        cursor: pointer;
-      `;
-      return `
-      <section id="grispiChatContainer" style="${containerStyle}">
-        <div id="grispiPopupHeader" style="${headerStyle}">
-          <span id="grispiChatTitle" style="${headerTextStyle}"></span>
-          <button id="grispiCloseButton" style="${grispiCloseButtonStyle}"><span id="grispiChatCloseIcon">
-      </span></button>
-        </div>
-        <iframe id="grispiIframe" src="${iframeUrl}" style="${iframeStyle}" referrerpolicy="origin"></iframe>
-      </section>
-
-      <section id="grispiChatStartContainer" style="${grispiChatStartContainerStyle}">
-        <span id="grispiChatStartIcon"></span>
-        <span id="grispiChatMessageCount" style="${grispiChatMessageCountStyle}"></span>
-        <span id="grispiChatPrompt" style="${grispiChatPromptStyle}">
-          <span id="grispiChatPromptText">Sohbete başlamak için tıklayın.</span>
-          <span id="grispiChatPromptHide" style="${grispiChatPromptHideStyle}" class="material-symbols-rounded">close</span>
-        </span>
-      </section>
-    `;
-    }
-
-    //</editor-fold>
-
-    document.head.insertAdjacentHTML('beforeend', style());
-    document.body.insertAdjacentHTML('beforeend', template());
-    const iframe = document.getElementById('grispiIframe');
-    const popup = document.getElementById('grispiChatContainer');
-    const headerTitleElem = document.getElementById('grispiChatTitle');
-    const closeBtn = document.getElementById('grispiCloseButton');
-    const startBtn = document.getElementById('grispiChatStartContainer');
-    const unreadCount = document.getElementById('grispiChatMessageCount');
-    const promptHideBtn = document.getElementById('grispiChatPromptHide');
+    const iframe = shadowDom.getElementById('chatIframe');
+    const popup = shadowDom.getElementById('popup');
+    const headerTitleElem = shadowDom.getElementById('chatTitle');
+    const closeBtn = shadowDom.getElementById('popupCloseBtn');
+    const startBtn = shadowDom.getElementById('startBtn');
+    const unreadCount = shadowDom.getElementById('messageCount');
+    const chatPrompt = shadowDom.getElementById('chatPrompt');
+    const promptHideBtn = shadowDom.getElementById('chatPromptHide');
 
     closeBtn.onclick = () => {
       popup.style.display = 'none';
@@ -268,11 +82,12 @@
     }
 
     promptHideBtn.onclick = e => {
-      console.log('done');
+      chatPrompt.style.display = 'none';
+      localStorage.setItem(LOCAL_STORAGE_KEY_DISMISS_PROMPT, 'true');
       e.cancelBubble = true;
     };
 
-    // listen for ready message then send init message when preferences promise is fullfilled
+    // listen for ready message then send init message when preferences promise is fulfilled
     window.addEventListener('message', (event) => {
       let message;
       try {
@@ -329,34 +144,9 @@
       }
     });
 
-    function uuidv4() {
-      return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) => (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16));
-    }
-
-    function grispiApiUrl(env) {
-      switch (env) {
-        case ENV_LOCAL:
-          return 'http://localhost:8080';
-        case ENV_STAGING:
-          return 'https://api.grispi.dev';
-        case ENV_PROD:
-          return 'https://api.grispi.com';
-      }
-    }
-
-    function chatPopupIframeUrl(env) {
-      switch (env) {
-        case ENV_LOCAL:
-          return 'http://localhost:3000';
-        case ENV_STAGING:
-          return 'https://chat-ui.grispi.dev';
-        case ENV_PROD:
-          return 'https://chat-ui.grispi.com';
-      }
-    }
-
   });
 
+  //<editor-fold desc="Utility functions">
   function parseEnv(env) {
     if (!env || env.trim().length === 0) return ENV_PROD;
     if (env.toLowerCase() === ENV_STAGING) return ENV_STAGING;
@@ -379,4 +169,187 @@
       tenantId: searchParams.get('tenantId'),
     };
   }
+
+  const onlineStatus = async () => {
+    const response = await fetch(`${GRISPI_API_URL}/chat/status`, {
+      method: 'GET', mode: 'cors', headers: {
+        tenantId: tenantId
+      }
+    });
+    return await response.json();
+  };
+
+  function uuidv4() {
+    return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) => (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16));
+  }
+
+  function grispiApiUrl(env) {
+    switch (env) {
+      case ENV_LOCAL:
+        return 'http://localhost:8080';
+      case ENV_STAGING:
+        return 'https://api.grispi.dev';
+      case ENV_PROD:
+        return 'https://api.grispi.com';
+    }
+  }
+
+  function chatPopupIframeUrl(env) {
+    switch (env) {
+      case ENV_LOCAL:
+        return 'http://localhost:3000';
+      case ENV_STAGING:
+        return 'https://chat-ui.grispi.dev';
+      case ENV_PROD:
+        return 'https://chat-ui.grispi.com';
+    }
+  }
+  //</editor-fold>
+
+  //<editor-fold desc="htmlTemplate">
+  function htmlTemplate(src, showPrompt) {
+    return `
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <style>
+    .material-symbols-rounded {
+      font-variation-settings:
+          'FILL' 1,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 48
+    }
+    #popup {
+      border-radius: 15px;
+      border: 0;
+      bottom: 10px;
+      box-shadow: 2px 10px 31px 0 rgba(0,0,0,0.33);
+      display: none;
+      flex-direction: column;
+      height: 650px;
+      position: fixed;
+      right: 10px;
+      width: 400px;
+      z-index: 2147483645;
+    }
+    #popupHeader {
+      align-content: center;justify-content: center;align-items: stretch;
+      background-color: #632d91;
+      border-top-left-radius: 15px;
+      border-top-right-radius: 15px;
+      display: flex;
+      flex-grow: 0;
+      height: 50px;
+    }
+    #chatTitle{
+      align-items: center;
+      color:#f8f9f9;
+      display: flex;
+      flex-grow: 1;
+      font-family: 'Montserrat', sans-serif;
+      padding-left: 10px;
+    }
+    #popupCloseBtn{
+      background-color: transparent;
+      border: 0 solid #3498db;
+      color: #f8f9f9;
+      cursor: pointer;
+      height: 50px;
+      padding-right:10px
+    }
+    #chatIframe{
+      border-bottom-left-radius: 15px;
+      border-bottom-right-radius: 15px;
+      border: none;
+      flex-grow: 2;
+    }
+
+    #startBtn {
+      align-items: center;
+      background-color: #632d91;
+      border-radius: 50%;
+      border: 0;
+      bottom: 20px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      height: 80px;
+      justify-content: center;
+      position: fixed;
+      right: 20px;
+      width: 80px;
+    }
+    #startWarningIcon{
+      color: orangered;
+      left: 3px;
+      position: absolute;
+      top: -10px;
+    }
+    #startIcon{
+      color: white;
+      font-size: 2.3em;
+    }
+    #messageCount{
+      background-color: orangered;
+      border-radius: 15px;
+      bottom: -8px;
+      color: white;
+      display: none;
+      font-family: sans-serif;
+      font-size: 16px;
+      font-weight: bold;
+      height: 30px;
+      left: 0;
+      line-height: 30px;
+      position: absolute;
+      text-align: center;
+      width: 30px;
+    }
+    #chatPrompt{
+      background-color: white;
+      border-radius: 18px;
+      border: 1px solid lightgrey;
+      display: ${showPrompt ? 'block' : 'none'};
+      font-family: sans-serif;
+      height: 35px;
+      padding: 0 10px;
+      position: absolute;
+      right: 85px;
+      width: 247px;
+    }
+    #chatPromptHide{
+      line-height: 36px;
+      vertical-align: middle;
+    }
+    #chatPromptHide:hover{
+      background-color: #eee;
+      border-radius: 20px;
+    }
+  </style>
+</head>
+<body>
+<section id="popup">
+  <div id="popupHeader">
+    <span id="chatTitle">Grispi sohbet</span>
+    <button id="popupCloseBtn">
+      <span class="material-symbols-rounded">close</span>
+    </button>
+  </div>
+  <iframe id="chatIframe" src="${src}" referrerpolicy="origin"></iframe>
+</section>
+
+<section id="startBtn">
+  <span id="startWarningIcon" class="material-symbols-rounded"> warning </span>
+  <span id="startIcon" class="material-symbols-rounded">chat</span>
+  <span id="messageCount"></span>
+  <span id="chatPrompt">
+    <span id="chatPromptText">Sohbete başlamak için tıklayın</span>
+    <span id="chatPromptHide" class="material-symbols-rounded">close</span>
+  </span>
+</section>
+</body>
+`;//return
+  }//htmlTemplate
+  //</editor-fold>
 }
