@@ -51,7 +51,7 @@
     const shadowDom = document.getElementById('GrispiChat').attachShadow({ mode: "open" });
 
     const showPrompt = localStorage.getItem(LOCAL_STORAGE_KEY_DISMISS_PROMPT) !== 'true';
-    shadowDom.innerHTML = htmlTemplate(iframeUrl, showPrompt, 'FIXME');
+    shadowDom.innerHTML = htmlTemplate(iframeUrl);
 
     const iframe = shadowDom.getElementById('chatIframe');
     const popup = shadowDom.getElementById('popup');
@@ -122,6 +122,10 @@
           })
           .then(async (parsedPreferences) => {
             headerTitleElem.innerText = parsedPreferences?.text?.title;
+            if (showPrompt) {
+              chatPrompt.style.display = 'flex';
+              chatPrompt.querySelector('#chatPromptText').innerText = parsedPreferences.text?.prompt;
+            }
             const initMessage = {
               type: EVENTS.INIT, auth: authKey, data: {
                 lastMessageTime: defaultIfNullish(window.localStorage.getItem(LOCAL_STORAGE_KEY_LAST_MESSAGE_TIME)),
@@ -297,6 +301,7 @@
     #startIcon{
       color: white;
       font-size: 2.3em;
+      margin-top: -38px;
     }
     #messageCount{
       background-color: orangered;
@@ -319,13 +324,12 @@
       background-color: white;
       border-radius: 18px;
       border: 1px solid lightgrey;
-      display: ${showPrompt ? 'flex' : 'none'};
+      display: none;
       font-family: sans-serif;
       height: 35px;
+      margin-left: -293px;
+      margin-top: 3px;
       padding: 0 10px;
-      position: absolute;
-      right: 85px;
-      width: 247px;
     }
     #chatPromptText {
     flex-grow: 1;
@@ -353,12 +357,12 @@
 
 <section id="startBtn">
   <span id="startWarningIcon" class="material-symbols-rounded"> warning </span>
-  <span id="startIcon" class="material-symbols-rounded">chat</span>
-  <span id="messageCount"></span>
   <span id="chatPrompt">
-    <span id="chatPromptText">${promptMessage}</span>
+    <span id="chatPromptText"></span>
     <span id="chatPromptHide" class="material-symbols-rounded">close</span>
   </span>
+  <span id="startIcon" class="material-symbols-rounded">chat</span>
+  <span id="messageCount"></span>
 </section>
 </body>
 `;//return
