@@ -2,6 +2,7 @@
 
 {
   //<editor-fold desc="Constant declarations">
+  const GOOGLE_ICON_FONTS_URL = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200';
   const DEBUG_MODE_URL_QUERY_PARAMETER = 'debug';
   const ENVIRONMENT_URL_QUERY_PARAMETER = 'env';
   const ENV_PROD = 'prod';
@@ -44,12 +45,13 @@
 
     document.body.insertAdjacentHTML('beforeend', `<section id="GrispiChat"></section>`);
 
-    // Fonts are not downloaded in shadow dom, they need to be in the main dom: https://stackoverflow.com/a/57623658/878361
-    document.body.insertAdjacentHTML('beforeend', `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />`);
+    // Fonts are not downloaded when they're only in shadow dom, they need to be in both sides, the main dom and the shadow dom:
+    // Thanks: https://stackoverflow.com/a/57623658/878361
+    document.body.insertAdjacentHTML('beforeend', `<link rel="stylesheet" href="${GOOGLE_ICON_FONTS_URL}" />`);
     const shadowDom = document.getElementById('GrispiChat').attachShadow({ mode: "open" });
 
     const showPrompt = localStorage.getItem(LOCAL_STORAGE_KEY_DISMISS_PROMPT) !== 'true';
-    shadowDom.innerHTML = htmlTemplate(iframeUrl, showPrompt);
+    shadowDom.innerHTML = htmlTemplate(iframeUrl, showPrompt, 'FIXME');
 
     const iframe = shadowDom.getElementById('chatIframe');
     const popup = shadowDom.getElementById('popup');
@@ -59,6 +61,7 @@
     const unreadCount = shadowDom.getElementById('messageCount');
     const chatPrompt = shadowDom.getElementById('chatPrompt');
     const promptHideBtn = shadowDom.getElementById('chatPromptHide');
+    const startWarningIcon = shadowDom.getElementById('startWarningIcon');
 
     closeBtn.onclick = () => {
       popup.style.display = 'none';
@@ -69,7 +72,8 @@
       startBtn.style.display = 'none';
     };
     startBtn.showWarningSign = function () {
-      this.insertAdjacentHTML('afterbegin', `<span class="material-symbols-rounded" style=" color: orangered; position: absolute; left: 3px; top: -10px; "> warning </span>`);
+      startWarningIcon.style.display = 'block';
+      chatPrompt.style.display = 'none'; // hide chat prompt as well
     }
     startBtn.updateMessageCount = function (messageCount) {
       if (messageCount > 0) {
@@ -97,7 +101,7 @@
         return;
       }
       const {auth, data, type} = message;
-      console.debug('event came', type, auth);
+      debug('Incoming event', type, auth, data);
       if (auth !== authKey) {
         console.error('Window is not authenticated!');
         return;
@@ -117,23 +121,25 @@
             return response.json();
           })
           .then(async (parsedPreferences) => {
-            headerTitleElem.insertAdjacentText('afterbegin', parsedPreferences.text.title);
-            const initMessage = JSON.stringify({
+            headerTitleElem.innerText = parsedPreferences?.text?.title;
+            const initMessage = {
               type: EVENTS.INIT, auth: authKey, data: {
-                lastMessageTime: window.localStorage.getItem(LOCAL_STORAGE_KEY_LAST_MESSAGE_TIME) ?? undefined,
+                lastMessageTime: defaultIfNullish(window.localStorage.getItem(LOCAL_STORAGE_KEY_LAST_MESSAGE_TIME)),
                 tenantId: tenantId,
-                chatId: window.localStorage.getItem(LOCAL_STORAGE_KEY_CHAT_ID) ?? undefined,
+                chatId: defaultIfNullish(window.localStorage.getItem(LOCAL_STORAGE_KEY_CHAT_ID)),
                 preferences: parsedPreferences,
                 online: await onlineStatus()
               }
-            });
-            event.source.postMessage(initMessage, event.origin); //FIXME use iframe.src instead of event.origin
+            };
+
+            debug('Sending initMessage', initMessage);
+            event.source.postMessage(initMessage, CHAT_POPUP_URL);
           })
           .catch(error => {
             startBtn.showWarningSign();
             console.error('An error occurred while fetching preferences!', error);
-            iframe.src = new URL(`config-error.html?msg=${error}`, chatJsUrl);
-            headerTitleElem.innerText = 'Grispi sohbet';
+            iframe.src = new URL(`config-error.html?msg=${'An error occurred while fetching preferences! ' + error}`, chatJsUrl);
+            headerTitleElem.innerText = 'Grispi sohbet';//i18n
           });
       } else if (type === EVENTS.NEW_CHAT_SESSION) {
         window.localStorage.setItem(LOCAL_STORAGE_KEY_CHAT_ID, data.chatId);
@@ -207,11 +213,11 @@
   //</editor-fold>
 
   //<editor-fold desc="htmlTemplate">
-  function htmlTemplate(src, showPrompt) {
+  function htmlTemplate(src, showPrompt, promptMessage) {
     return `
 <head>
   <meta charset="utf-8" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <link rel="stylesheet" href="${GOOGLE_ICON_FONTS_URL}" />
   <style>
     .material-symbols-rounded {
       font-variation-settings:
@@ -282,9 +288,11 @@
     }
     #startWarningIcon{
       color: orangered;
-      left: 3px;
+      display: none;
+      left: -6px;
       position: absolute;
-      top: -10px;
+      top: -12px;
+      font-size: 2rem;
     }
     #startIcon{
       color: white;
@@ -307,16 +315,20 @@
       width: 30px;
     }
     #chatPrompt{
+      align-items: center;
       background-color: white;
       border-radius: 18px;
       border: 1px solid lightgrey;
-      display: ${showPrompt ? 'block' : 'none'};
+      display: ${showPrompt ? 'flex' : 'none'};
       font-family: sans-serif;
       height: 35px;
       padding: 0 10px;
       position: absolute;
       right: 85px;
       width: 247px;
+    }
+    #chatPromptText {
+    flex-grow: 1;
     }
     #chatPromptHide{
       line-height: 36px;
@@ -344,7 +356,7 @@
   <span id="startIcon" class="material-symbols-rounded">chat</span>
   <span id="messageCount"></span>
   <span id="chatPrompt">
-    <span id="chatPromptText">Sohbete başlamak için tıklayın</span>
+    <span id="chatPromptText">${promptMessage}</span>
     <span id="chatPromptHide" class="material-symbols-rounded">close</span>
   </span>
 </section>
@@ -352,4 +364,15 @@
 `;//return
   }//htmlTemplate
   //</editor-fold>
+
+  function debug(...args) {
+    if (inDebugMode) {
+      console.log('chat.js', ...args);
+    }
+  }
+
+  function defaultIfNullish(value, defaultValue) {
+    if ('undefined' === value || 'null' === value) return defaultValue;
+    return value ?? defaultValue;
+  }
 }
