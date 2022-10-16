@@ -2,7 +2,8 @@
 
 {
   //<editor-fold desc="Constant declarations">
-  const GOOGLE_ICON_FONTS_URL = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200';
+  //https://fonts.google.com/icons?icon.style=Rounded&icon.query=minimize
+  const GOOGLE_ICON_FONTS_URL = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,0,0';
   const DEBUG_MODE_URL_QUERY_PARAMETER = 'debug';
   const ENVIRONMENT_URL_QUERY_PARAMETER = 'env';
   const ENV_PROD = 'prod';
@@ -13,12 +14,18 @@
   const LOCAL_STORAGE_KEY_CHAT_ID = 'grispi.chat.chatId';
   const LOCAL_STORAGE_KEY_LAST_MESSAGE_TIME = 'grispi.chat.lastMessageTime';
 
-  const EVENTS = {
+  const INCOMING_EVENTS = {
     READY: 'grispi.chat.request.ready',
-    INIT: 'grispi.chat.response.init',
     NEW_CHAT_SESSION: 'grispi.chat.request.newChatSession',
     LAST_MESSAGE_TIME: 'grispi.chat.request.lastMessageTime',
     UNREAD_MESSAGES_COUNT: 'grispi.chat.request.unreadMessageCount'
+  };
+
+  const OUTGOING_EVENTS = {
+    INIT: 'grispi.chat.response.init',
+    POPUP_CLOSED: 'grispi.chat.event.popupClosed',
+    POPUP_OPENED: 'grispi.chat.event.popupOpened',
+    USER_WANTS_TO_END_CHAT: 'grispi.chat.event.userWantsToEndChat',
   };
 
   const GRISPI_API_URL = grispiApiUrl(environment);
@@ -57,19 +64,25 @@
     const popup = shadowDom.getElementById('popup');
     const headerTitleElem = shadowDom.getElementById('chatTitle');
     const closeBtn = shadowDom.getElementById('popupCloseBtn');
+    const minimizeBtn = shadowDom.getElementById('popupMinimizeBtn');
     const startBtn = shadowDom.getElementById('startBtn');
     const unreadCount = shadowDom.getElementById('messageCount');
     const chatPrompt = shadowDom.getElementById('chatPrompt');
     const promptHideBtn = shadowDom.getElementById('chatPromptHide');
     const startWarningIcon = shadowDom.getElementById('startWarningIcon');
 
-    closeBtn.onclick = () => {
+    minimizeBtn.onclick = () => {
       popup.style.display = 'none';
       startBtn.style.display = 'flex';
+      iframe.contentWindow.postMessage({type: OUTGOING_EVENTS.POPUP_CLOSED, auth: authKey}, CHAT_POPUP_URL);
+    };
+    closeBtn.onclick = () => {
+      iframe.contentWindow.postMessage({type: OUTGOING_EVENTS.USER_WANTS_TO_END_CHAT, auth: authKey}, CHAT_POPUP_URL);
     };
     startBtn.onclick = () => {
       popup.style.display = 'flex';
       startBtn.style.display = 'none';
+      iframe.contentWindow.postMessage({type: OUTGOING_EVENTS.POPUP_OPENED, auth: authKey}, CHAT_POPUP_URL);
     };
     startBtn.showWarningSign = function () {
       startWarningIcon.style.display = 'block';
@@ -106,7 +119,7 @@
         console.error('Window is not authenticated!');
         return;
       }
-      if (type === EVENTS.READY) {
+      if (type === INCOMING_EVENTS.READY) {
         fetch(`${GRISPI_API_URL}/chat/preferences`, {
           method: 'GET', mode: 'cors', headers: {
             tenantId: tenantId
@@ -127,7 +140,7 @@
               chatPrompt.querySelector('#chatPromptText').innerText = parsedPreferences.text?.prompt;
             }
             const initMessage = {
-              type: EVENTS.INIT, auth: authKey, data: {
+              type: OUTGOING_EVENTS.INIT, auth: authKey, data: {
                 lastMessageTime: defaultIfNullish(window.localStorage.getItem(LOCAL_STORAGE_KEY_LAST_MESSAGE_TIME)),
                 tenantId: tenantId,
                 chatId: defaultIfNullish(window.localStorage.getItem(LOCAL_STORAGE_KEY_CHAT_ID)),
@@ -145,11 +158,11 @@
             iframe.src = new URL(`config-error.html?msg=${'An error occurred while fetching preferences! ' + error}`, chatJsUrl);
             headerTitleElem.innerText = 'Grispi sohbet';//i18n
           });
-      } else if (type === EVENTS.NEW_CHAT_SESSION) {
+      } else if (type === INCOMING_EVENTS.NEW_CHAT_SESSION) {
         window.localStorage.setItem(LOCAL_STORAGE_KEY_CHAT_ID, data.chatId);
-      } else if (type === EVENTS.LAST_MESSAGE_TIME) {
+      } else if (type === INCOMING_EVENTS.LAST_MESSAGE_TIME) {
         window.localStorage.setItem(LOCAL_STORAGE_KEY_LAST_MESSAGE_TIME, data.lastMessageTime);
-      } else if (type === EVENTS.UNREAD_MESSAGES_COUNT) {
+      } else if (type === INCOMING_EVENTS.UNREAD_MESSAGES_COUNT) {
         startBtn.updateMessageCount(data.count);
       }
     });
@@ -217,7 +230,7 @@
   //</editor-fold>
 
   //<editor-fold desc="htmlTemplate">
-  function htmlTemplate(src, showPrompt, promptMessage) {
+  function htmlTemplate(src) {
     return `
 <head>
   <meta charset="utf-8" />
@@ -260,13 +273,16 @@
       font-family: 'Montserrat', sans-serif;
       padding-left: 10px;
     }
-    #popupCloseBtn{
+    #popupMinimizeBtn, #popupCloseBtn{
       background-color: transparent;
       border: 0 solid #3498db;
       color: #f8f9f9;
       cursor: pointer;
       height: 50px;
       padding-right:10px
+    }
+    #popupMinimizeBtn:hover, #popupCloseBtn:hover{
+      color: #ccc;
     }
     #chatIframe{
       border-bottom-left-radius: 15px;
@@ -348,6 +364,9 @@
 <section id="popup">
   <div id="popupHeader">
     <span id="chatTitle">Grispi sohbet</span>
+    <button id="popupMinimizeBtn">
+      <span class="material-symbols-rounded">minimize</span>
+    </button>
     <button id="popupCloseBtn">
       <span class="material-symbols-rounded">close</span>
     </button>
