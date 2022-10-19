@@ -85,21 +85,28 @@
       iframe.contentWindow.postMessage({type: OUTGOING_EVENTS.POPUP_OPENED, auth: authKey}, CHAT_POPUP_URL);
     };
     startBtn.showWarningSign = function () {
-      startWarningIcon.style.display = 'block';
-      chatPrompt.style.display = 'none'; // hide chat prompt as well
+      startBtn.classList.add('show-warn');
     }
     startBtn.updateMessageCount = function (messageCount) {
       if (messageCount > 0) {
         unreadCount.innerText = messageCount;
-        unreadCount.style.display = 'inline'; //element is span hence display is inline
+        startBtn.classList.add('show-count');
       } else {
         unreadCount.innerText = '';
-        unreadCount.style.display = 'none';
+        startBtn.classList.remove('show-count');
       }
     }
 
+    chatPrompt.show = () => {
+      startBtn.classList.add('show-prompt');
+    }
+
+    chatPrompt.hide = () => {
+      startBtn.classList.remove('show-prompt');
+    }
+
     promptHideBtn.onclick = e => {
-      chatPrompt.style.display = 'none';
+      chatPrompt.hide();
       localStorage.setItem(LOCAL_STORAGE_KEY_DISMISS_PROMPT, 'true');
       e.cancelBubble = true;
     };
@@ -136,7 +143,7 @@
           .then(async (parsedPreferences) => {
             headerTitleElem.innerText = parsedPreferences?.text?.title;
             if (showPrompt) {
-              chatPrompt.style.display = 'flex';
+              chatPrompt.show();
               chatPrompt.querySelector('#chatPromptText').innerText = parsedPreferences.text?.prompt;
             }
             const initMessage = {
@@ -314,10 +321,15 @@
       top: -12px;
       font-size: 2rem;
     }
+    .show-warn #startWarningIcon {
+      display: block;
+    }
     #startIcon{
       color: white;
       font-size: 2.3em;
-      margin-top: -38px;
+    }
+    .show-prompt #startIcon {
+      margin-top: -39px;
     }
     #messageCount{
       background-color: orangered;
@@ -335,6 +347,9 @@
       text-align: center;
       width: 30px;
     }
+    .show-count #messageCount {
+      display: inline;
+    }
     #chatPrompt{
       align-items: center;
       background-color: white;
@@ -346,6 +361,9 @@
       margin-left: -293px;
       margin-top: 3px;
       padding: 0 10px;
+    }
+    .show-prompt #chatPrompt {
+      display: flex;
     }
     #chatPromptText {
     flex-grow: 1;
