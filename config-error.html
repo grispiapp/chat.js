@@ -1,0 +1,29 @@
+<html lang="tr">
+<head>
+  <title>Grispi Config Error</title>
+  <meta charset="utf-8">
+  <style>
+    body {
+      font-family: sans-serif;
+      padding-top: 30px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 1.7em;
+    }
+    h1, em, p {
+
+    }
+  </style>
+</head>
+<body>
+<h1>Grispi sohbet yüklenemedi!</h1>
+<em>Bir yapılandırma hatası var, Grispi yöneticinize danışınız.</em>
+<img alt="" src="config-error.svg">
+<p id="message"></p>
+<script>
+  message.innerText = new URL(location).searchParams.get('message') || new URL(location).searchParams.get('msg');
+  document.querySelector('img').alt = message.innerText;
+</script>
+</body>
+</html>
