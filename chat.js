@@ -42,7 +42,8 @@
   const iframeUrl = `${CHAT_POPUP_URL}?url=${HOST_URL}&auth=${authKey}${iframeUrlDebugParam}`;
   //</editor-fold>
 
-  typeof window === 'object' && window.addEventListener('DOMContentLoaded', () => {
+  //<editor-fold desc="init()">
+  function init() {
 
     if (document.getElementById('GrispiChat')) {
       const errorMsg = `There's already an element with id "GrispiChat". Ensure that you only include "chat.js" once.`;
@@ -177,7 +178,14 @@
       }
     });
 
-  });
+  }
+  //</editor-fold>
+
+  if (document.readyState === 'loading') {  // Loading hasn't finished yet
+    typeof window === 'object' && window.addEventListener('DOMContentLoaded', init);
+  } else {  // `DOMContentLoaded` has already fired
+    init();
+  }
 
   //<editor-fold desc="Utility functions">
   function parseEnv(env) {
