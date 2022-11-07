@@ -1,6 +1,31 @@
 'use strict';
 
 {
+  let timeoutHandle;
+  let idleSince = Date.now();
+  window.addEventListener('load', resetTimer);
+  window.addEventListener('mousemove', resetTimer);
+  window.addEventListener('mousedown', resetTimer);  // catches touchscreen presses as well
+  window.addEventListener('touchstart', resetTimer); // catches touchscreen swipes as well
+  window.addEventListener('touchmove', resetTimer);  // required by some devices
+  window.addEventListener('click', resetTimer);      // catches touchpad clicks as well
+  window.addEventListener('keydown', resetTimer);
+  window.addEventListener('scroll', resetTimer, true); // improved; see comments
+
+  function idleCallback() {
+    //console.warn('chat.js idle detected');
+    //TODO send idleSince info along with an idle event (a new event type)
+  }
+
+  function resetTimer() {
+    //console.warn('resetTimer');
+    clearTimeout(timeoutHandle);
+    idleSince = Date.now();
+    timeoutHandle = setTimeout(idleCallback, 10000);  // time is in milliseconds
+  }
+}
+
+{
   //<editor-fold desc="Constant declarations">
   //https://fonts.google.com/icons?icon.style=Rounded&icon.query=minimize
   const GOOGLE_ICON_FONTS_URL = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,0,0';
