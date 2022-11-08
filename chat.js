@@ -1,6 +1,31 @@
 'use strict';
 
 {
+  let timeoutHandle;
+  let idleSince = Date.now();
+  window.addEventListener('load', resetTimer);
+  window.addEventListener('mousemove', resetTimer);
+  window.addEventListener('mousedown', resetTimer);  // catches touchscreen presses as well
+  window.addEventListener('touchstart', resetTimer); // catches touchscreen swipes as well
+  window.addEventListener('touchmove', resetTimer);  // required by some devices
+  window.addEventListener('click', resetTimer);      // catches touchpad clicks as well
+  window.addEventListener('keydown', resetTimer);
+  window.addEventListener('scroll', resetTimer, true); // improved; see comments
+
+  function idleCallback() {
+    //console.warn('chat.js idle detected');
+    //TODO send idleSince info along with an idle event (a new event type)
+  }
+
+  function resetTimer() {
+    //console.warn('resetTimer');
+    clearTimeout(timeoutHandle);
+    idleSince = Date.now();
+    timeoutHandle = setTimeout(idleCallback, 10000);  // time is in milliseconds
+  }
+}
+
+{
   //<editor-fold desc="Constant declarations">
   //https://fonts.google.com/icons?icon.style=Rounded&icon.query=minimize
   const GOOGLE_ICON_FONTS_URL = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,0,0';
@@ -18,7 +43,7 @@
     READY: 'grispi.chat.request.ready',
     NEW_CHAT_SESSION: 'grispi.chat.request.newChatSession',
     LAST_MESSAGE_TIME: 'grispi.chat.request.lastMessageTime',
-    UNREAD_MESSAGES_COUNT: 'grispi.chat.request.unreadMessageCount',
+    UNSEEN_MESSAGES_COUNT: 'grispi.chat.request.unseenMessageCount',
     CLOSE_POPUP: 'grispi.chat.request.closePopup',
   };
 
@@ -115,14 +140,8 @@
 
     // listen for ready message then send init message when preferences promise is fulfilled
     window.addEventListener('message', (event) => {
-      let message;
-      try {
-        message = JSON.parse(event.data);
-      } catch (e) {
-        console.log('Cannot parse event data', event.data);
-        return;
-      }
-      const {auth, data, type} = message;
+
+      const {auth, data, type} = event.data;
       debug('Incoming event', type, auth, data);
       if (auth !== authKey) {
         console.error('Window is not authenticated!');
@@ -171,7 +190,7 @@
         window.localStorage.setItem(LOCAL_STORAGE_KEY_CHAT_ID, data.chatId);
       } else if (type === INCOMING_EVENTS.LAST_MESSAGE_TIME) {
         window.localStorage.setItem(LOCAL_STORAGE_KEY_LAST_MESSAGE_TIME, data.lastMessageTime);
-      } else if (type === INCOMING_EVENTS.UNREAD_MESSAGES_COUNT) {
+      } else if (type === INCOMING_EVENTS.UNSEEN_MESSAGES_COUNT) {
         startBtn.updateMessageCount(data.count);
       } else if (type === INCOMING_EVENTS.CLOSE_POPUP) {
         minimizeBtn.onclick();
