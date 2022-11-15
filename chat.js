@@ -45,6 +45,7 @@
     LAST_MESSAGE_TIME: 'grispi.chat.request.lastMessageTime',
     UNSEEN_MESSAGES_COUNT: 'grispi.chat.request.unseenMessageCount',
     CLOSE_POPUP: 'grispi.chat.request.closePopup',
+    RESET_CHAT: 'grispi.chat.request.resetChat',
   };
 
   const OUTGOING_EVENTS = {
@@ -193,6 +194,12 @@
         startBtn.updateMessageCount(data.count);
       } else if (type === INCOMING_EVENTS.CLOSE_POPUP) {
         minimizeBtn.onclick();
+      } else if (type === INCOMING_EVENTS.RESET_CHAT) {
+        localStorage.removeItem(LOCAL_STORAGE_KEY_LAST_MESSAGE_TIME);
+        localStorage.removeItem(LOCAL_STORAGE_KEY_CHAT_ID);
+        const iframeSrc = iframe.src;
+        iframe.src = '';
+        iframe.src = iframeSrc;
       }
     });
 
