@@ -1,7 +1,7 @@
 'use strict';
 
 {
-  const VERSION = '0.1.0';
+  const VERSION = '0.1.1';
   console.log(`Grispi chat.js ${VERSION}`);
   window.GRISPI_CHAT_JS_VERSION = VERSION;
 }
