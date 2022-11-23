@@ -1,7 +1,7 @@
 'use strict';
 
 {
-  const VERSION = '0.1.1';
+  const VERSION = '0.1.2';
   console.log(`Grispi chat.js ${VERSION}`);
   window.GRISPI_CHAT_JS_VERSION = VERSION;
 }
@@ -285,6 +285,7 @@
 <head>
   <meta charset="utf-8" />
   <link rel="stylesheet" href="${GOOGLE_ICON_FONTS_URL}" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/modern-normalize/1.1.0/modern-normalize.min.css" integrity="sha512-wpPYUAdjBVSE4KJnH1VR1HeZfpl1ub8YT/NKx4PuQ5NmX2tKuGu6U/JRp5y+Y8XG2tV+wKQpNHVUX03MfMFn9Q==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
     .material-symbols-rounded {
       font-variation-settings:
@@ -320,7 +321,9 @@
       color:#f8f9f9;
       display: flex;
       flex-grow: 1;
-      font-family: 'Montserrat', sans-serif;
+      font-family: sans-serif;
+      font-size: 19px;
+      font-weight: normal;
       padding-left: 10px;
     }
     #popupMinimizeBtn, #popupCloseBtn{
@@ -350,6 +353,7 @@
       cursor: pointer;
       display: flex;
       flex-direction: column;
+      font-weight: normal;
       height: 80px;
       justify-content: center;
       position: fixed;
@@ -369,10 +373,10 @@
     }
     #startIcon{
       color: white;
-      font-size: 2.3em;
+      font-size: 40px;
     }
     .show-prompt #startIcon {
-      margin-top: -39px;
+      margin-top: -50px;
     }
     #messageCount{
       background-color: orangered;
@@ -398,11 +402,15 @@
       background-color: white;
       border-radius: 18px;
       border: 1px solid lightgrey;
+      color: #595959;
       display: none;
       font-family: sans-serif;
-      height: 35px;
-      margin-left: -293px;
-      margin-top: 3px;
+      font-size: 17px;
+      font-weight: normal;
+      height: 40px;
+      line-height: 26px;
+      margin-left: -305px;
+      margin-top: 10px;
       padding: 0 10px;
     }
     .show-prompt #chatPrompt {
