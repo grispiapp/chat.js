@@ -38,8 +38,7 @@
   const DEBUG_MODE_URL_QUERY_PARAMETER = 'debug';
   const ENVIRONMENT_URL_QUERY_PARAMETER = 'env';
   const ENV_PROD = 'prod';
-  const ENV_DEV = 'dev'
-  const ENV_STAGING = 'net';
+  const ENV_STAGING = 'staging';
   const ENV_LOCAL = 'local';
   const {chatJsUrl, environment, inDebugMode, tenantId } = extractSearchParamsInSrc();
   const LOCAL_STORAGE_KEY_DISMISS_PROMPT = 'grispi.chat.dismissPrompt';
@@ -262,11 +261,9 @@
       case ENV_LOCAL:
         return 'http://localhost:8080';
       case ENV_STAGING:
-        return 'https://api.grispi.net';
+        return 'https://api.grispi.dev';
       case ENV_PROD:
         return 'https://api.grispi.com';
-      case ENV_DEV:
-        return 'https://api.grispi.dev'
     }
   }
 
@@ -275,11 +272,9 @@
       case ENV_LOCAL:
         return 'http://localhost:3000';
       case ENV_STAGING:
-        return 'https://chat-ui.grispi.net';
+        return 'https://chat-ui.grispi.dev';
       case ENV_PROD:
         return 'https://chat-ui.grispi.com';
-      case ENV_DEV:
-        return 'https://chat-ui.grispi.dev';
     }
   }
   //</editor-fold>
