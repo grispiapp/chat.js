@@ -40,6 +40,7 @@
   const ENV_PROD = 'prod';
   const ENV_STAGING = 'staging';
   const ENV_LOCAL = 'local';
+  const ENV_PREPROD = 'preprod'
   const {chatJsUrl, environment, inDebugMode, lang, tenantId } = extractSearchParamsInSrc();
   const LOCAL_STORAGE_KEY_DISMISS_PROMPT = 'grispi.chat.dismissPrompt';
   const LOCAL_STORAGE_KEY_CHAT_ID = 'grispi.chat.chatId';
@@ -265,6 +266,8 @@
         return 'https://api.grispi.dev';
       case ENV_PROD:
         return 'https://api.grispi.com';
+      case ENV_PREPROD:
+        return 'https://api.grispi.net';
     }
   }
 
@@ -276,6 +279,8 @@
         return 'https://chat-ui.grispi.dev';
       case ENV_PROD:
         return 'https://chat-ui.grispi.com';
+      case ENV_PREPROD:
+        return 'https://chat-ui.grispi.net';
     }
   }
   //</editor-fold>
