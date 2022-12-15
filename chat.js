@@ -1,7 +1,7 @@
 'use strict';
 
 {
-  const VERSION = '0.1.2';
+  const VERSION = '0.1.3';
   console.log(`Grispi chat.js ${VERSION}`);
   window.GRISPI_CHAT_JS_VERSION = VERSION;
 }
@@ -40,7 +40,7 @@
   const ENV_PROD = 'prod';
   const ENV_STAGING = 'staging';
   const ENV_LOCAL = 'local';
-  const {chatJsUrl, environment, inDebugMode, tenantId } = extractSearchParamsInSrc();
+  const {chatJsUrl, environment, inDebugMode, lang, tenantId } = extractSearchParamsInSrc();
   const LOCAL_STORAGE_KEY_DISMISS_PROMPT = 'grispi.chat.dismissPrompt';
   const LOCAL_STORAGE_KEY_CHAT_ID = 'grispi.chat.chatId';
   const LOCAL_STORAGE_KEY_LAST_MESSAGE_TIME = 'grispi.chat.lastMessageTime';
@@ -71,7 +71,7 @@
 
   const authKey = uuidv4();
   const iframeUrlDebugParam = inDebugMode ? '&debug=true' : '';
-  const iframeUrl = `${CHAT_POPUP_URL}?url=${HOST_URL}&auth=${authKey}${iframeUrlDebugParam}`;
+  const iframeUrl = `${CHAT_POPUP_URL}?url=${HOST_URL}&auth=${authKey}&lang=${lang}${iframeUrlDebugParam}`;
   //</editor-fold>
 
   //<editor-fold desc="init()">
@@ -240,6 +240,7 @@
       environment: parseEnv(searchParams.get(ENVIRONMENT_URL_QUERY_PARAMETER)),
       inDebugMode: debugModeParam.toLowerCase() === 'true',
       tenantId: searchParams.get('tenantId'),
+      lang: searchParams.get('lang') ?? (navigator.language.startsWith('tr') ? 'tr' : 'en'),
     };
   }
 
