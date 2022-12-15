@@ -223,6 +223,7 @@
   //<editor-fold desc="Utility functions">
   function parseEnv(env) {
     if (!env || env.trim().length === 0) return ENV_PROD;
+    if (env.toLowerCase() === ENV_PREPROD) return ENV_PREPROD;
     if (env.toLowerCase() === ENV_STAGING) return ENV_STAGING;
     if (env.toLowerCase() === ENV_LOCAL) return ENV_LOCAL;
   }
