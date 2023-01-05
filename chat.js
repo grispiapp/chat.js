@@ -1,7 +1,7 @@
 'use strict';
 
 {
-  const VERSION = '0.1.3';
+  const VERSION = '0.1.4';
   console.log(`Grispi chat.js ${VERSION}`);
   window.GRISPI_CHAT_JS_VERSION = VERSION;
 }
@@ -313,6 +313,14 @@
       right: 10px;
       width: 400px;
       z-index: 2147483645;
+    }
+    @media (max-width: 450px) {
+      #popup {
+        height: auto;
+        left: 10px;
+        top: 10px;
+        width: auto;
+      }
     }
     #popupHeader {
       align-content: center;justify-content: center;align-items: stretch;
