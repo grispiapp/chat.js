@@ -380,6 +380,7 @@
       position: fixed;
       right: 20px;
       width: 80px;
+      z-index: 2147483644;
     }
     #startWarningIcon{
       color: orangered;
