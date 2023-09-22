@@ -37,11 +37,12 @@
   const GOOGLE_ICON_FONTS_URL = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,0,0';
   const DEBUG_MODE_URL_QUERY_PARAMETER = 'debug';
   const ENVIRONMENT_URL_QUERY_PARAMETER = 'env';
+  const ENVIRONMENT_UI_URL_QUERY_PARAMETER = 'env-ui';
   const ENV_PROD = 'prod';
   const ENV_STAGING = 'staging';
   const ENV_LOCAL = 'local';
   const ENV_PREPROD = 'preprod'
-  const {chatJsUrl, environment, inDebugMode, lang, tenantId } = extractSearchParamsInSrc();
+  const {chatJsUrl, environment,environmentUI, inDebugMode, lang, tenantId } = extractSearchParamsInSrc();
   const LOCAL_STORAGE_KEY_DISMISS_PROMPT = 'grispi.chat.dismissPrompt';
   const LOCAL_STORAGE_KEY_CHAT_ID = 'grispi.chat.chatId';
   const LOCAL_STORAGE_KEY_LAST_MESSAGE_TIME = 'grispi.chat.lastMessageTime';
@@ -63,7 +64,7 @@
   };
 
   const GRISPI_API_URL = grispiApiUrl(environment);
-  const CHAT_POPUP_URL = chatPopupIframeUrl(environment);
+  const CHAT_POPUP_URL = chatPopupIframeUrl(environmentUI);
 
   /**
    * The customer's own site url (3rd party website). The one that the end user browses.
@@ -238,11 +239,13 @@
 
     const debugModeParam = searchParams.get(DEBUG_MODE_URL_QUERY_PARAMETER) || '';
     return {
-      chatJsUrl: document.currentScript.src,
-      environment: parseEnv(searchParams.get(ENVIRONMENT_URL_QUERY_PARAMETER)),
-      inDebugMode: debugModeParam.toLowerCase() === 'true',
-      tenantId: searchParams.get('tenantId'),
-      lang: searchParams.get('lang') ?? (navigator.language.startsWith('tr') ? 'tr' : 'en'),
+        chatJsUrl: document.currentScript.src,
+        environment: parseEnv(searchParams.get(ENVIRONMENT_URL_QUERY_PARAMETER)),
+        environmentUI: parseEnv(
+            searchParams.get(ENVIRONMENT_URL_QUERY_PARAMETER )|| searchParams.get(ENVIRONMENT_URL_QUERY_PARAMETER)),
+        inDebugMode: debugModeParam.toLowerCase() === 'true',
+        tenantId: searchParams.get('tenantId'),
+        lang: searchParams.get('lang') ?? (navigator.language.startsWith('tr') ? 'tr' : 'en')
     };
   }
 
