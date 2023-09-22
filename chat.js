@@ -242,7 +242,8 @@
         chatJsUrl: document.currentScript.src,
         environment: parseEnv(searchParams.get(ENVIRONMENT_URL_QUERY_PARAMETER)),
         environmentUI: parseEnv(
-            searchParams.get(ENVIRONMENT_URL_QUERY_PARAMETER )|| searchParams.get(ENVIRONMENT_URL_QUERY_PARAMETER)),
+            searchParams.get(ENVIRONMENT_UI_URL_QUERY_PARAMETER) || searchParams.get(ENVIRONMENT_URL_QUERY_PARAMETER)
+        ),
         inDebugMode: debugModeParam.toLowerCase() === 'true',
         tenantId: searchParams.get('tenantId'),
         lang: searchParams.get('lang') ?? (navigator.language.startsWith('tr') ? 'tr' : 'en')
